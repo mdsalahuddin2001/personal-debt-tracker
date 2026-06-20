@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Expense Tracker
 
-## Getting Started
+Fullstack admin app built with **Next.js 16 (App Router)**, **Tailwind CSS v4**, **shadcn/ui**, **MongoDB**, and **Better Auth**.
 
-First, run the development server:
+For now there is a single user type — `admin`. There is **no public signup**; admins are provisioned with a seed script and can only log in.
+
+## Stack
+
+| Concern        | Choice                          |
+| -------------- | ------------------------------- |
+| Framework      | Next.js 16 (App Router, TS)     |
+| Styling        | Tailwind CSS v4 + shadcn/ui     |
+| Database       | MongoDB (`mongodb` driver)      |
+| Authentication | Better Auth (`admin` plugin)    |
+
+## Getting started
+
+### 1. Prerequisites
+
+- Node.js 20+
+- [pnpm](https://pnpm.io) 10+
+- A running MongoDB instance (local `mongodb://localhost:27017` or Atlas)
+
+Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configure environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copy the example file and fill in the values:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+```
 
-## Learn More
+| Variable              | Description                                          |
+| --------------------- | ---------------------------------------------------- |
+| `MONGODB_URI`         | MongoDB connection string                            |
+| `MONGODB_DB_NAME`     | Database name (default `expense_tracker`)            |
+| `BETTER_AUTH_SECRET`  | Random secret — generate: `openssl rand -base64 32`  |
+| `BETTER_AUTH_URL`     | App base URL (e.g. `http://localhost:3000`)          |
+| `SEED_ADMIN_EMAIL`    | Email for the seeded admin                           |
+| `SEED_ADMIN_PASSWORD` | Password for the seeded admin                        |
+| `SEED_ADMIN_NAME`     | Display name for the seeded admin                    |
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Seed the admin user
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm seed
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This creates an admin user from the `SEED_ADMIN_*` variables. It is idempotent —
+re-running it resets the existing admin's password.
 
-## Deploy on Vercel
+### 4. Run the app
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm dev
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open <http://localhost:3000> — you'll be redirected to `/login`. Sign in with the
+seeded admin credentials to reach `/dashboard`.
+
+## Project structure
+
+```
+src/
+├── app/
+│   ├── api/auth/[...all]/route.ts   # Better Auth route handler
+│   ├── login/                       # Login page + client form
+│   ├── dashboard/                   # Protected dashboard + sign-out
+│   ├── layout.tsx                   # Root layout + Toaster
+│   └── page.tsx                     # Redirects to /dashboard
+├── lib/
+│   ├── auth.ts                      # Better Auth server config
+│   ├── auth-client.ts               # Better Auth React client
+│   └── db.ts                        # MongoDB client + db
+├── components/ui/                   # shadcn/ui components
+└── proxy.ts                         # Route protection for /dashboard
+scripts/
+└── seed.ts                          # Admin seeding script
+```
+
+## Notes
+
+- Public signup is disabled via `emailAndPassword.disableSignUp` in `src/lib/auth.ts`.
+- `src/proxy.ts` (Next.js 16's replacement for `middleware.ts`) does an optimistic
+  cookie check; full session validation happens in server components via
+  `auth.api.getSession`.

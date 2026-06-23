@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, ArrowUpRight, ArrowDownLeft, Users } from "lucide-react";
+import { Plus, ArrowUpRight, ArrowDownLeft, Users, Scale } from "lucide-react";
 import { getDashboardSummary, getContactOptions } from "@/lib/queries";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -48,7 +48,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -76,6 +76,23 @@ export default async function DashboardPage() {
               {formatCurrency(summary.totalPayable)}
             </p>
             <CardDescription>Money you owe</CardDescription>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Net Payable
+            </CardTitle>
+            <Scale className="size-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold text-yellow-600">
+              {formatCurrency(summary.totalPayable - summary.totalReceivable)}
+            </p>
+            <CardDescription>
+              Net you owe after collecting all receivables
+            </CardDescription>
           </CardContent>
         </Card>
 

@@ -14,7 +14,7 @@ export default async function AppLayout({
   return (
     <div className="min-h-svh bg-muted/40">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
           <Link
             href="/dashboard"
             className="flex items-center gap-2 font-semibold"
@@ -26,7 +26,7 @@ export default async function AppLayout({
           <SignOutButton />
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { X } from "@phosphor-icons/react/dist/ssr"
+import { X } from "@/components/icons"
 
 function Dialog({
   ...props

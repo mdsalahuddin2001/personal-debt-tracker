@@ -8,11 +8,12 @@ import {
   Users,
   ArrowsLeftRight,
   Calculator,
+  ChartBar,
   CaretDown,
   Wallet,
   List,
   X,
-} from "@phosphor-icons/react/dist/ssr";
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -24,8 +25,13 @@ const groups = [
     label: "Hishab Nikash",
     icon: Calculator,
     children: [
-      { href: "/contacts", label: "Contacts", icon: Users },
-      { href: "/transactions", label: "Transactions", icon: ArrowsLeftRight },
+      { href: "/hishab-nikash/summary", label: "Summary", icon: ChartBar },
+      { href: "/hishab-nikash/contacts", label: "Contacts", icon: Users },
+      {
+        href: "/hishab-nikash/transactions",
+        label: "Transactions",
+        icon: ArrowsLeftRight,
+      },
     ],
   },
 ];

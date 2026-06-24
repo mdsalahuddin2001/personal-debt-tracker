@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Phone, CaretRight } from "@phosphor-icons/react/dist/ssr";
+import { Plus, Phone, CaretRight } from "@/components/icons";
 import { getContactsWithBalances } from "@/lib/queries";
 import { BalanceBadge, balanceLabel } from "@/components/balance-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,7 +39,7 @@ export default async function ContactsPage() {
             {contacts.map((c) => (
               <Link
                 key={c.id}
-                href={`/contacts/${c.id}`}
+                href={`/hishab-nikash/contacts/${c.id}`}
                 className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/50"
               >
                 <div className="min-w-0">

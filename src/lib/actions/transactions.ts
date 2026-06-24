@@ -16,11 +16,11 @@ function firstError(message?: string): string {
 }
 
 function revalidateTxn(...contactIds: (string | undefined)[]) {
-  revalidatePath("/dashboard");
-  revalidatePath("/transactions");
-  revalidatePath("/contacts");
+  revalidatePath("/hishab-nikash/summary");
+  revalidatePath("/hishab-nikash/transactions");
+  revalidatePath("/hishab-nikash/contacts");
   for (const id of contactIds) {
-    if (id) revalidatePath(`/contacts/${id}`);
+    if (id) revalidatePath(`/hishab-nikash/contacts/${id}`);
   }
 }
 

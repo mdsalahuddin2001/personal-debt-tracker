@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
+import { PencilSimple, Trash } from "@/components/icons";
 import type { TransactionType } from "@/lib/transaction-types";
 import type { SerializedTransaction } from "@/lib/queries";
 import { TYPE_META } from "@/lib/constants";
@@ -57,7 +57,7 @@ export function TransactionList({
               </span>
               {showContact && t.contactName && (
                 <Link
-                  href={`/contacts/${t.contactId}`}
+                  href={`/hishab-nikash/contacts/${t.contactId}`}
                   className="text-sm font-medium hover:underline"
                 >
                   {t.contactName}

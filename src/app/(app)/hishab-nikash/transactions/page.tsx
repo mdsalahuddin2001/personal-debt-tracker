@@ -1,4 +1,4 @@
-import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { Plus } from "@/components/icons";
 import { getAllTransactions, getContactOptions } from "@/lib/queries";
 import {
   Card,

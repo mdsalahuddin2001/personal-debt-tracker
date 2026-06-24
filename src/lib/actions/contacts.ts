@@ -27,8 +27,8 @@ export async function createContact(values: unknown): Promise<ActionResult> {
     notes: parsed.data.notes || undefined,
   });
 
-  revalidatePath("/contacts");
-  revalidatePath("/dashboard");
+  revalidatePath("/hishab-nikash/contacts");
+  revalidatePath("/hishab-nikash/summary");
   return ok;
 }
 
@@ -52,9 +52,9 @@ export async function updateContact(
     },
   });
 
-  revalidatePath("/contacts");
-  revalidatePath(`/contacts/${id}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/hishab-nikash/contacts");
+  revalidatePath(`/hishab-nikash/contacts/${id}`);
+  revalidatePath("/hishab-nikash/summary");
   return ok;
 }
 
@@ -67,8 +67,8 @@ export async function deleteContact(id: string): Promise<ActionResult> {
   await Transaction.deleteMany({ contact: id });
   await Contact.findByIdAndDelete(id);
 
-  revalidatePath("/contacts");
-  revalidatePath("/dashboard");
-  revalidatePath("/transactions");
+  revalidatePath("/hishab-nikash/contacts");
+  revalidatePath("/hishab-nikash/summary");
+  revalidatePath("/hishab-nikash/transactions");
   return ok;
 }

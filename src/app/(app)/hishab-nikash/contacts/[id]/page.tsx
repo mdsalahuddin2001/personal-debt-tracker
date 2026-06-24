@@ -6,7 +6,7 @@ import {
   PencilSimple,
   Trash,
   Phone,
-} from "@phosphor-icons/react/dist/ssr";
+} from "@/components/icons";
 import { getContactDetail } from "@/lib/queries";
 import { BalanceBadge, balanceLabel } from "@/components/balance-badge";
 import {
@@ -36,7 +36,7 @@ export default async function ContactDetailPage({
   return (
     <div className="space-y-6">
       <Link
-        href="/contacts"
+        href="/hishab-nikash/contacts"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
       >
         <ArrowLeft className="size-4" /> Contacts

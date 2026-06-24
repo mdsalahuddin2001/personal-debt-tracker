@@ -34,7 +34,7 @@ export function DeleteContactButton({
     if (res.success) {
       toast.success("Contact deleted");
       setOpen(false);
-      router.push("/contacts");
+      router.push("/hishab-nikash/contacts");
       router.refresh();
     } else {
       toast.error(res.error);

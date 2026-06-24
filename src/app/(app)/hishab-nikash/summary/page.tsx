@@ -5,7 +5,7 @@ import {
   ArrowDownLeft,
   Users,
   Scales,
-} from "@phosphor-icons/react/dist/ssr";
+} from "@/components/icons";
 import { getDashboardSummary, getContactOptions } from "@/lib/queries";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -20,7 +20,7 @@ import { ContactForm } from "@/components/contact-form";
 import { TransactionForm } from "@/components/transaction-form";
 import { TransactionList } from "@/components/transaction-list";
 
-export default async function DashboardPage() {
+export default async function SummaryPage() {
   const [summary, contacts] = await Promise.all([
     getDashboardSummary(),
     getContactOptions(),
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <h1 className="text-2xl font-semibold">Summary</h1>
           <p className="text-muted-foreground">
             Your lending and borrowing at a glance.
           </p>
@@ -112,7 +112,7 @@ export default async function DashboardPage() {
           <CardContent>
             <p className="text-2xl font-semibold">{summary.totalContacts}</p>
             <CardDescription>
-              <Link href="/contacts" className="hover:underline">
+              <Link href="/hishab-nikash/contacts" className="hover:underline">
                 View all contacts
               </Link>
             </CardDescription>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
             <CardDescription>Your latest activity</CardDescription>
           </div>
           <Link
-            href="/transactions"
+            href="/hishab-nikash/transactions"
             className="text-sm text-muted-foreground hover:underline"
           >
             View all

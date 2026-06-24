@@ -1,8 +1,5 @@
-import Link from "next/link";
-import { Wallet } from "lucide-react";
 import { requireSession } from "@/lib/auth-helpers";
-import { AppNav } from "@/components/app-nav";
-import { SignOutButton } from "@/components/sign-out-button";
+import { AppSidebar } from "@/components/app-sidebar";
 
 export default async function AppLayout({
   children,
@@ -12,21 +9,11 @@ export default async function AppLayout({
   await requireSession();
 
   return (
-    <div className="min-h-svh bg-muted/40">
-      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2 font-semibold"
-          >
-            <Wallet className="size-5 text-primary" />
-            <span className="hidden sm:inline">Debt Tracker</span>
-          </Link>
-          <AppNav />
-          <SignOutButton />
-        </div>
-      </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+    <div className="min-h-svh bg-muted/40 md:flex">
+      <AppSidebar />
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-8">
+        {children}
+      </main>
     </div>
   );
 }

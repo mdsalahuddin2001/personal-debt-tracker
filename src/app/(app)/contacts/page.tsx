@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Phone, ChevronRight } from "lucide-react";
+import { Plus, Phone, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import { getContactsWithBalances } from "@/lib/queries";
 import { BalanceBadge, balanceLabel } from "@/components/balance-badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,7 +64,7 @@ export default async function ContactsPage() {
                       {balanceLabel(c.balance)}
                     </p>
                   </div>
-                  <ChevronRight className="size-4 text-muted-foreground" />
+                  <CaretRight className="size-4 text-muted-foreground" />
                 </div>
               </Link>
             ))}

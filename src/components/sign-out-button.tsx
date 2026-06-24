@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { SignOut } from "@phosphor-icons/react/dist/ssr";
 import { signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
@@ -20,9 +20,14 @@ export function SignOutButton() {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleSignOut}>
-      <LogOut className="size-4" />
-      <span className="hidden sm:inline">Sign out</span>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleSignOut}
+      className="w-full justify-start"
+    >
+      <SignOut className="size-4" />
+      <span>Sign out</span>
     </Button>
   );
 }

@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Trash2, Phone } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  PencilSimple,
+  Trash,
+  Phone,
+} from "@phosphor-icons/react/dist/ssr";
 import { getContactDetail } from "@/lib/queries";
 import { BalanceBadge, balanceLabel } from "@/components/balance-badge";
 import {
@@ -57,7 +63,7 @@ export default async function ContactDetailPage({
             contact={contact}
             trigger={
               <Button variant="outline" size="sm">
-                <Pencil className="size-4" /> Edit
+                <PencilSimple className="size-4" /> Edit
               </Button>
             }
           />
@@ -66,7 +72,7 @@ export default async function ContactDetailPage({
             name={contact.name}
             trigger={
               <Button variant="outline" size="sm">
-                <Trash2 className="size-4" /> Delete
+                <Trash className="size-4" /> Delete
               </Button>
             }
           />

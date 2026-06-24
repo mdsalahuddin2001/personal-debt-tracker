@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
+import { PencilSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import type { TransactionType } from "@/lib/transaction-types";
 import type { SerializedTransaction } from "@/lib/queries";
 import { TYPE_META } from "@/lib/constants";
@@ -83,7 +83,7 @@ export function TransactionList({
                   transaction={t}
                   trigger={
                     <Button variant="ghost" size="icon" aria-label="Edit">
-                      <Pencil className="size-4" />
+                      <PencilSimple className="size-4" />
                     </Button>
                   }
                 />
@@ -96,7 +96,7 @@ export function TransactionList({
                       aria-label="Delete"
                       className="text-muted-foreground hover:text-destructive"
                     >
-                      <Trash2 className="size-4" />
+                      <Trash className="size-4" />
                     </Button>
                   }
                 />

@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { Plus, ArrowUpRight, ArrowDownLeft, Users, Scale } from "lucide-react";
+import {
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Users,
+  Scales,
+} from "@phosphor-icons/react/dist/ssr";
 import { getDashboardSummary, getContactOptions } from "@/lib/queries";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -84,7 +90,7 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Net Payable
             </CardTitle>
-            <Scale className="size-4 text-yellow-600" />
+            <Scales className="size-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-semibold text-yellow-600">

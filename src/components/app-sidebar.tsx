@@ -1,0 +1,188 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  SquaresFour,
+  Users,
+  ArrowsLeftRight,
+  Calculator,
+  CaretDown,
+  Wallet,
+  List,
+  X,
+} from "@phosphor-icons/react/dist/ssr";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { SignOutButton } from "@/components/sign-out-button";
+
+const topLinks = [{ href: "/dashboard", label: "Dashboard", icon: SquaresFour }];
+
+const groups = [
+  {
+    label: "Hishab Nikash",
+    icon: Calculator,
+    children: [
+      { href: "/contacts", label: "Contacts", icon: Users },
+      { href: "/transactions", label: "Transactions", icon: ArrowsLeftRight },
+    ],
+  },
+];
+
+export function AppSidebar() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur md:hidden">
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+          <Wallet className="size-5 text-primary" />
+          <span>Debt Tracker</span>
+        </Link>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+        >
+          <List className="size-4" />
+        </Button>
+      </div>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 md:hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-background transition-transform md:sticky md:top-0 md:z-auto md:h-svh md:translate-x-0",
+          open ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 border-b px-5 py-4">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2 font-semibold"
+            onClick={() => setOpen(false)}
+          >
+            <Wallet className="size-5 text-primary" />
+            <span>Debt Tracker</span>
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
+
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+          {topLinks.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive(href)
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              <Icon className="size-4" />
+              {label}
+            </Link>
+          ))}
+
+          {groups.map((group) => (
+            <NavGroup
+              key={group.label}
+              group={group}
+              isActive={isActive}
+              onNavigate={() => setOpen(false)}
+            />
+          ))}
+        </nav>
+
+        <div className="border-t p-3">
+          <SignOutButton />
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function NavGroup({
+  group,
+  isActive,
+  onNavigate,
+}: {
+  group: (typeof groups)[number];
+  isActive: (href: string) => boolean;
+  onNavigate: () => void;
+}) {
+  const { label, icon: Icon, children } = group;
+  const hasActiveChild = children.some((c) => isActive(c.href));
+  const [expanded, setExpanded] = useState(hasActiveChild);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          hasActiveChild
+            ? "text-foreground"
+            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+        )}
+      >
+        <Icon className="size-4" />
+        <span className="flex-1 text-left">{label}</span>
+        <CaretDown
+          className={cn(
+            "size-3.5 transition-transform",
+            expanded ? "rotate-180" : "rotate-0"
+          )}
+        />
+      </button>
+
+      {expanded && (
+        <div className="mt-1 ml-4 flex flex-col gap-1 border-l pl-3">
+          {children.map(({ href, label: childLabel, icon: ChildIcon }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive(href)
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              <ChildIcon className="size-4" />
+              {childLabel}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

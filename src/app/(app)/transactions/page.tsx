@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { getAllTransactions, getContactOptions } from "@/lib/queries";
 import {
   Card,

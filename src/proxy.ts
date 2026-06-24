@@ -18,5 +18,6 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/hishab-nikash/:path*",
+    "/admin/:path*",
   ],
 };

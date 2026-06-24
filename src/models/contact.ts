@@ -2,6 +2,8 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 
 const contactSchema = new Schema(
   {
+    // better-auth user id (24-hex string) that owns this contact.
+    owner: { type: String, required: true, index: true },
     name: { type: String, required: true, trim: true },
     phone: { type: String, trim: true },
     relationship: { type: String, trim: true },
@@ -9,6 +11,9 @@ const contactSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Owner-scoped lookups sorted by name.
+contactSchema.index({ owner: 1, name: 1 });
 
 export type ContactDoc = InferSchemaType<typeof contactSchema>;
 

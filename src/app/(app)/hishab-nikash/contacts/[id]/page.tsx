@@ -8,7 +8,7 @@ import {
   Phone,
 } from "@/components/icons";
 import { getContactDetail } from "@/lib/queries";
-import { BalanceBadge, balanceLabel } from "@/components/balance-badge";
+import { BalanceBadge, balanceLabel } from "@/app/(app)/hishab-nikash/_components/balance-badge";
 import {
   Card,
   CardContent,
@@ -16,10 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ContactForm } from "@/components/contact-form";
-import { DeleteContactButton } from "@/components/delete-contact-button";
-import { TransactionForm } from "@/components/transaction-form";
-import { TransactionList } from "@/components/transaction-list";
+import { ContactForm } from "@/app/(app)/hishab-nikash/_components/contact-form";
+import { DeleteContactButton } from "@/app/(app)/hishab-nikash/_components/delete-contact-button";
+import { TransactionForm } from "@/app/(app)/hishab-nikash/_components/transaction-form";
+import { TransactionList } from "@/app/(app)/hishab-nikash/_components/transaction-list";
 
 export default async function ContactDetailPage({
   params,

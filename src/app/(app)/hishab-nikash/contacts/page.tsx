@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Plus, Phone, CaretRight } from "@/components/icons";
 import { getContactsWithBalances } from "@/lib/queries";
-import { BalanceBadge, balanceLabel } from "@/components/balance-badge";
+import { BalanceBadge, balanceLabel } from "@/app/(app)/hishab-nikash/_components/balance-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ContactForm } from "@/components/contact-form";
+import { ContactForm } from "@/app/(app)/hishab-nikash/_components/contact-form";
 
 export default async function ContactsPage() {
   const contacts = await getContactsWithBalances();

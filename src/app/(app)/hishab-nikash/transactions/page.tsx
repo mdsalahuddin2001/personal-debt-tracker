@@ -5,9 +5,9 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TransactionForm } from "@/components/transaction-form";
-import { TransactionList } from "@/components/transaction-list";
-import { TransactionFilters } from "@/components/transaction-filters";
+import { TransactionForm } from "@/app/(app)/hishab-nikash/_components/transaction-form";
+import { TransactionList } from "@/app/(app)/hishab-nikash/_components/transaction-list";
+import { TransactionFilters } from "@/app/(app)/hishab-nikash/_components/transaction-filters";
 
 export default async function TransactionsPage({
   searchParams,

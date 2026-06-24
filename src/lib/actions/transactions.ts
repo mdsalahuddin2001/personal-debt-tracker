@@ -6,7 +6,7 @@ import { connectDB } from "@/lib/mongoose";
 import { Contact } from "@/models/contact";
 import { Transaction } from "@/models/transaction";
 import { transactionSchema } from "@/lib/validations";
-import { requireSession } from "@/lib/auth-helpers";
+import { requireUserId } from "@/lib/auth-helpers";
 import { fail, ok, type ActionResult } from "@/lib/actions/result";
 
 const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -27,7 +27,7 @@ function revalidateTxn(...contactIds: (string | undefined)[]) {
 export async function createTransaction(
   values: unknown
 ): Promise<ActionResult> {
-  await requireSession();
+  const owner = await requireUserId();
 
   const parsed = transactionSchema.safeParse(values);
   if (!parsed.success) return fail(firstError(parsed.error.issues[0]?.message));
@@ -35,10 +35,15 @@ export async function createTransaction(
     return fail("Invalid contact");
 
   await connectDB();
-  const contactExists = await Contact.exists({ _id: parsed.data.contactId });
+  // Verify the contact belongs to this user before referencing it.
+  const contactExists = await Contact.exists({
+    _id: parsed.data.contactId,
+    owner,
+  });
   if (!contactExists) return fail("Contact not found");
 
   await Transaction.create({
+    owner,
     contact: parsed.data.contactId,
     type: parsed.data.type,
     amount: round2(Number(parsed.data.amount)),
@@ -54,7 +59,7 @@ export async function updateTransaction(
   id: string,
   values: unknown
 ): Promise<ActionResult> {
-  await requireSession();
+  const owner = await requireUserId();
   if (!Types.ObjectId.isValid(id)) return fail("Invalid transaction");
 
   const parsed = transactionSchema.safeParse(values);
@@ -63,33 +68,43 @@ export async function updateTransaction(
     return fail("Invalid contact");
 
   await connectDB();
-  const existing = await Transaction.findById(id).select("contact").lean<{
-    contact: Types.ObjectId;
-  }>();
+  const existing = await Transaction.findOne({ _id: id, owner })
+    .select("contact")
+    .lean<{ contact: Types.ObjectId }>();
   if (!existing) return fail("Transaction not found");
 
-  await Transaction.findByIdAndUpdate(id, {
-    $set: {
-      contact: parsed.data.contactId,
-      type: parsed.data.type,
-      amount: round2(Number(parsed.data.amount)),
-      date: new Date(parsed.data.date),
-      note: parsed.data.note || null,
-    },
+  // Verify the (possibly new) contact also belongs to this user.
+  const contactExists = await Contact.exists({
+    _id: parsed.data.contactId,
+    owner,
   });
+  if (!contactExists) return fail("Contact not found");
+
+  await Transaction.findOneAndUpdate(
+    { _id: id, owner },
+    {
+      $set: {
+        contact: parsed.data.contactId,
+        type: parsed.data.type,
+        amount: round2(Number(parsed.data.amount)),
+        date: new Date(parsed.data.date),
+        note: parsed.data.note || null,
+      },
+    }
+  );
 
   revalidateTxn(String(existing.contact), parsed.data.contactId);
   return ok;
 }
 
 export async function deleteTransaction(id: string): Promise<ActionResult> {
-  await requireSession();
+  const owner = await requireUserId();
   if (!Types.ObjectId.isValid(id)) return fail("Invalid transaction");
 
   await connectDB();
-  const existing = await Transaction.findByIdAndDelete(id).select("contact").lean<{
-    contact: Types.ObjectId;
-  }>();
+  const existing = await Transaction.findOneAndDelete({ _id: id, owner })
+    .select("contact")
+    .lean<{ contact: Types.ObjectId }>();
 
   revalidateTxn(existing ? String(existing.contact) : undefined);
   return ok;

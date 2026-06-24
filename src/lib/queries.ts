@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongoose";
 import { Contact } from "@/models/contact";
 import { Transaction, type TransactionType } from "@/models/transaction";
 import { TYPE_META } from "@/lib/constants";
+import { requireUserId } from "@/lib/auth-helpers";
 
 export type ContactWithBalance = {
   id: string;
@@ -71,19 +72,23 @@ function serializeTxn(t: LeanTransaction): SerializedTransaction {
   };
 }
 
-async function getBalanceMap(): Promise<Map<string, number>> {
+async function getBalanceMap(owner: string): Promise<Map<string, number>> {
   const balances = await Transaction.aggregate<{
     _id: Types.ObjectId;
     balance: number;
-  }>([{ $group: { _id: "$contact", balance: { $sum: signedAmount } } }]);
+  }>([
+    { $match: { owner } },
+    { $group: { _id: "$contact", balance: { $sum: signedAmount } } },
+  ]);
   return new Map(balances.map((b) => [String(b._id), b.balance]));
 }
 
 export async function getContactsWithBalances(): Promise<ContactWithBalance[]> {
+  const owner = await requireUserId();
   await connectDB();
   const [contacts, balanceMap] = await Promise.all([
-    Contact.find().sort({ name: 1 }).lean<LeanContact[]>(),
-    getBalanceMap(),
+    Contact.find({ owner }).sort({ name: 1 }).lean<LeanContact[]>(),
+    getBalanceMap(owner),
   ]);
 
   return contacts.map((c) => ({
@@ -100,8 +105,11 @@ export async function getContactsWithBalances(): Promise<ContactWithBalance[]> {
 export async function getContactOptions(): Promise<
   { id: string; name: string }[]
 > {
+  const owner = await requireUserId();
   await connectDB();
-  const contacts = await Contact.find().sort({ name: 1 }).lean<LeanContact[]>();
+  const contacts = await Contact.find({ owner })
+    .sort({ name: 1 })
+    .lean<LeanContact[]>();
   return contacts.map((c) => ({ id: String(c._id), name: c.name }));
 }
 
@@ -110,12 +118,13 @@ export async function getContactDetail(id: string): Promise<{
   transactions: SerializedTransaction[];
 } | null> {
   if (!Types.ObjectId.isValid(id)) return null;
+  const owner = await requireUserId();
   await connectDB();
 
-  const contact = await Contact.findById(id).lean<LeanContact>();
+  const contact = await Contact.findOne({ _id: id, owner }).lean<LeanContact>();
   if (!contact) return null;
 
-  const txns = await Transaction.find({ contact: id })
+  const txns = await Transaction.find({ contact: id, owner })
     .sort({ date: -1, createdAt: -1 })
     .lean<LeanTransaction[]>();
 
@@ -138,8 +147,9 @@ export async function getContactDetail(id: string): Promise<{
 }
 
 export async function getAllTransactions(): Promise<SerializedTransaction[]> {
+  const owner = await requireUserId();
   await connectDB();
-  const txns = await Transaction.find()
+  const txns = await Transaction.find({ owner })
     .sort({ date: -1, createdAt: -1 })
     .populate("contact", "name")
     .lean<LeanTransaction[]>();
@@ -154,11 +164,12 @@ export type DashboardSummary = {
 };
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const owner = await requireUserId();
   await connectDB();
   const [balanceMap, totalContacts, recent] = await Promise.all([
-    getBalanceMap(),
-    Contact.countDocuments(),
-    Transaction.find()
+    getBalanceMap(owner),
+    Contact.countDocuments({ owner }),
+    Transaction.find({ owner })
       .sort({ date: -1, createdAt: -1 })
       .limit(8)
       .populate("contact", "name")

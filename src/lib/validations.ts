@@ -34,3 +34,21 @@ export const transactionSchema = z.object({
 });
 
 export type TransactionInput = z.infer<typeof transactionSchema>;
+
+export const USER_ROLES = ["user", "admin"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
+export const createUserSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().min(1, "Email is required").email("Enter a valid email"),
+  password: z.string().min(8, "At least 8 characters"),
+  role: z.enum(USER_ROLES),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+export const resetPasswordSchema = z.object({
+  newPassword: z.string().min(8, "At least 8 characters"),
+});
+
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

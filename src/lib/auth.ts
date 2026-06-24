@@ -28,8 +28,8 @@ export const auth = betterAuth({
   },
   plugins: [
     admin({
-      // Only the admin role exists for now.
-      defaultRole: "admin",
+      // New users are normal users by default; admins are promoted explicitly.
+      defaultRole: "user",
       adminRoles: ["admin"],
     }),
     // nextCookies must be the last plugin in the array.

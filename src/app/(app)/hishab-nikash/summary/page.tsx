@@ -16,9 +16,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ContactForm } from "@/components/contact-form";
-import { TransactionForm } from "@/components/transaction-form";
-import { TransactionList } from "@/components/transaction-list";
+import { ContactForm } from "@/app/(app)/hishab-nikash/_components/contact-form";
+import { TransactionForm } from "@/app/(app)/hishab-nikash/_components/transaction-form";
+import { TransactionList } from "@/app/(app)/hishab-nikash/_components/transaction-list";
 
 export default async function SummaryPage() {
   const [summary, contacts] = await Promise.all([

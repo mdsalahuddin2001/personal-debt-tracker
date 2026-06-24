@@ -16,7 +16,7 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { SignOutButton } from "@/components/sign-out-button";
+import { SignOutButton } from "./sign-out-button";
 
 const topLinks = [{ href: "/dashboard", label: "Dashboard", icon: SquaresFour }];
 
@@ -36,7 +36,9 @@ const groups = [
   },
 ];
 
-export function AppSidebar() {
+const adminLink = { href: "/admin/users", label: "Users", icon: Users };
+
+export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -48,7 +50,7 @@ export function AppSidebar() {
       {/* Mobile top bar */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <Wallet className="size-5 text-primary" />
+          <Wallet weight="duotone" className="size-5 text-primary" />
           <span>Debt Tracker</span>
         </Link>
         <Button
@@ -57,7 +59,7 @@ export function AppSidebar() {
           onClick={() => setOpen(true)}
           aria-label="Open menu"
         >
-          <List className="size-4" />
+          <List weight="duotone" className="size-4" />
         </Button>
       </div>
 
@@ -83,7 +85,7 @@ export function AppSidebar() {
             className="flex items-center gap-2 font-semibold"
             onClick={() => setOpen(false)}
           >
-            <Wallet className="size-5 text-primary" />
+            <Wallet weight="duotone" className="size-5 text-primary" />
             <span>Debt Tracker</span>
           </Link>
           <Button
@@ -93,7 +95,7 @@ export function AppSidebar() {
             onClick={() => setOpen(false)}
             aria-label="Close menu"
           >
-            <X className="size-4" />
+            <X weight="duotone" className="size-4" />
           </Button>
         </div>
 
@@ -110,7 +112,7 @@ export function AppSidebar() {
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >
-              <Icon className="size-4" />
+              <Icon weight="duotone" className="size-4" />
               {label}
             </Link>
           ))}
@@ -123,6 +125,22 @@ export function AppSidebar() {
               onNavigate={() => setOpen(false)}
             />
           ))}
+
+          {isAdmin && (
+            <Link
+              href={adminLink.href}
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                isActive(adminLink.href)
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              <adminLink.icon weight="duotone" className="size-4" />
+              {adminLink.label}
+            </Link>
+          )}
         </nav>
 
         <div className="border-t p-3">
@@ -159,9 +177,10 @@ function NavGroup({
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
         )}
       >
-        <Icon className="size-4" />
+        <Icon weight="duotone" className="size-4" />
         <span className="flex-1 text-left">{label}</span>
         <CaretDown
+          weight="duotone"
           className={cn(
             "size-3.5 transition-transform",
             expanded ? "rotate-180" : "rotate-0"
@@ -183,7 +202,7 @@ function NavGroup({
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               )}
             >
-              <ChildIcon className="size-4" />
+              <ChildIcon weight="duotone" className="size-4" />
               {childLabel}
             </Link>
           ))}

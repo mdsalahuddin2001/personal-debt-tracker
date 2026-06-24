@@ -6,8 +6,8 @@ import { TYPE_META } from "@/lib/constants";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { TransactionForm } from "@/components/transaction-form";
-import { DeleteTransactionButton } from "@/components/delete-transaction-button";
+import { TransactionForm } from "./transaction-form";
+import { DeleteTransactionButton } from "./delete-transaction-button";
 
 const TYPE_BADGE: Record<TransactionType, string> = {
   lend: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",

@@ -17,6 +17,8 @@ export { TRANSACTION_TYPES, type TransactionType };
 
 const transactionSchema = new Schema(
   {
+    // better-auth user id (24-hex string) that owns this transaction.
+    owner: { type: String, required: true, index: true },
     contact: {
       type: Schema.Types.ObjectId,
       ref: "Contact",
@@ -34,6 +36,10 @@ const transactionSchema = new Schema(
   },
   { timestamps: true }
 );
+
+// Owner-scoped lookups: recent-first lists and per-contact queries.
+transactionSchema.index({ owner: 1, date: -1 });
+transactionSchema.index({ owner: 1, contact: 1 });
 
 export type TransactionDoc = InferSchemaType<typeof transactionSchema> & {
   contact: Types.ObjectId;

@@ -35,6 +35,45 @@ export const transactionSchema = z.object({
 
 export type TransactionInput = z.infer<typeof transactionSchema>;
 
+// ----- Files module -----
+
+/** Max size for a single uploaded file (100 MB). */
+export const MAX_FILE_SIZE = 100 * 1024 * 1024;
+
+// Names that map to a single filesystem-like entry: no slashes, not just dots.
+const entryName = (max: number) =>
+  z
+    .string()
+    .trim()
+    .min(1, "Name is required")
+    .max(max, `Must be ${max} characters or fewer`)
+    .refine((v) => !v.includes("/") && !v.includes("\\"), "Name can't contain slashes")
+    .refine((v) => v !== "." && v !== "..", "Invalid name");
+
+export const folderNameSchema = z.object({
+  name: entryName(120),
+});
+
+export type FolderNameInput = z.infer<typeof folderNameSchema>;
+
+export const fileNameSchema = z.object({
+  name: entryName(200),
+});
+
+export type FileNameInput = z.infer<typeof fileNameSchema>;
+
+export const uploadRequestSchema = z.object({
+  name: entryName(200),
+  size: z
+    .number()
+    .int()
+    .positive("File is empty")
+    .max(MAX_FILE_SIZE, "File is larger than 100 MB"),
+  contentType: z.string().min(1).max(255),
+});
+
+export type UploadRequestInput = z.infer<typeof uploadRequestSchema>;
+
 export const USER_ROLES = ["user", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 

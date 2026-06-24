@@ -11,6 +11,7 @@ export {
   CaretUpIcon as CaretUp,
   CaretRightIcon as CaretRight,
   WalletIcon as Wallet,
+  UserCircleIcon as UserCircle,
   ListIcon as List,
   XIcon as X,
   SignOutIcon as SignOut,
@@ -34,4 +35,21 @@ export {
   ProhibitIcon as Prohibit,
   KeyIcon as Key,
   UserPlusIcon as UserPlus,
+  // Files module
+  FolderIcon as Folder,
+  FolderOpenIcon as FolderOpen,
+  FolderPlusIcon as FolderPlus,
+  // Generic file glyph — keep the `Icon` suffix so it doesn't shadow the
+  // global DOM `File` type used by the upload component.
+  FileIcon,
+  FileTextIcon as FileText,
+  FilePdfIcon as FilePdf,
+  FileZipIcon as FileZip,
+  ImageIcon as FileImage,
+  VideoCameraIcon as VideoCamera,
+  MusicNotesIcon as MusicNotes,
+  UploadSimpleIcon as UploadSimple,
+  DownloadSimpleIcon as DownloadSimple,
+  ArrowsOutCardinalIcon as ArrowsOutCardinal,
+  EyeIcon as Eye,
 } from "@phosphor-icons/react/dist/ssr";

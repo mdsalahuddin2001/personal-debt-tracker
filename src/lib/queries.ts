@@ -2,6 +2,8 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/mongoose";
 import { Contact } from "@/models/contact";
 import { Transaction, type TransactionType } from "@/models/transaction";
+import { Folder } from "@/models/folder";
+import { FileItem } from "@/models/file";
 import { TYPE_META } from "@/lib/constants";
 import { requireUserId } from "@/lib/auth-helpers";
 
@@ -189,4 +191,114 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     totalContacts,
     recentTransactions: recent.map(serializeTxn),
   };
+}
+
+// ----- Files module -----
+
+type LeanFolder = {
+  _id: Types.ObjectId;
+  name: string;
+  parent: Types.ObjectId | null;
+  createdAt: Date;
+};
+
+type LeanFile = {
+  _id: Types.ObjectId;
+  name: string;
+  folder: Types.ObjectId | null;
+  size: number;
+  contentType: string;
+  createdAt: Date;
+};
+
+export type FolderEntry = { id: string; name: string; createdAt: string };
+export type FileEntry = {
+  id: string;
+  name: string;
+  size: number;
+  contentType: string;
+  createdAt: string;
+};
+export type Breadcrumb = { id: string; name: string };
+
+export type FolderContents = {
+  /** null when viewing the root ("My Files"). */
+  currentFolder: { id: string; name: string } | null;
+  /** Ancestor chain from the topmost folder down to and including the current. */
+  breadcrumbs: Breadcrumb[];
+  folders: FolderEntry[];
+  files: FileEntry[];
+};
+
+/**
+ * List the folders and files directly inside `folderId` (or the root when
+ * null), together with the breadcrumb trail. Returns null when the folder id
+ * is malformed or not owned by the user, so the page can render notFound().
+ */
+export async function getFolderContents(
+  folderId: string | null
+): Promise<FolderContents | null> {
+  const owner = await requireUserId();
+  await connectDB();
+
+  let currentFolder: FolderContents["currentFolder"] = null;
+  const breadcrumbs: Breadcrumb[] = [];
+
+  if (folderId) {
+    if (!Types.ObjectId.isValid(folderId)) return null;
+    const folder = await Folder.findOne({ _id: folderId, owner }).lean<LeanFolder | null>();
+    if (!folder) return null;
+    currentFolder = { id: String(folder._id), name: folder.name };
+
+    // Walk up the parent chain to build the breadcrumb trail (guard cycles).
+    const seen = new Set<string>([String(folder._id)]);
+    let parent = folder.parent;
+    breadcrumbs.unshift({ id: String(folder._id), name: folder.name });
+    while (parent) {
+      const pid = String(parent);
+      if (seen.has(pid)) break;
+      seen.add(pid);
+      const p = await Folder.findOne({ _id: parent, owner }).lean<LeanFolder | null>();
+      if (!p) break;
+      breadcrumbs.unshift({ id: String(p._id), name: p.name });
+      parent = p.parent;
+    }
+  }
+
+  const parentFilter = folderId ?? null;
+  const [folders, files] = await Promise.all([
+    Folder.find({ owner, parent: parentFilter }).sort({ name: 1 }).lean<LeanFolder[]>(),
+    FileItem.find({ owner, folder: parentFilter }).sort({ name: 1 }).lean<LeanFile[]>(),
+  ]);
+
+  return {
+    currentFolder,
+    breadcrumbs,
+    folders: folders.map((f) => ({
+      id: String(f._id),
+      name: f.name,
+      createdAt: new Date(f.createdAt).toISOString(),
+    })),
+    files: files.map((f) => ({
+      id: String(f._id),
+      name: f.name,
+      size: f.size,
+      contentType: f.contentType,
+      createdAt: new Date(f.createdAt).toISOString(),
+    })),
+  };
+}
+
+export type FolderOption = { id: string; name: string; parentId: string | null };
+
+/** Every folder the user owns — used to pick a destination when moving. */
+export async function getFolderOptions(): Promise<FolderOption[]> {
+  const owner = await requireUserId();
+  await connectDB();
+  const folders = await Folder.find({ owner }).sort({ name: 1 }).lean<LeanFolder[]>();
+  return folders.map((f) => ({
+    id: String(f._id),
+    name: f.name,
+    parentId: f.parent ? String(f.parent) : null,
+  }));
 }

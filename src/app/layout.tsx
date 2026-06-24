@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Debt Tracker',
-  description: 'Admin dashboard for the personal debt & loan tracker',
+  title: 'Manage Me',
+  description: 'Manage Me — personal finance and file management',
 }
 
 export default function RootLayout({

@@ -10,7 +10,8 @@ import {
   Calculator,
   ChartBar,
   CaretDown,
-  Wallet,
+  UserCircle,
+  Folder,
   List,
   X,
 } from "@/components/icons";
@@ -18,9 +19,24 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SignOutButton } from "./sign-out-button";
 
-const topLinks = [{ href: "/dashboard", label: "Dashboard", icon: SquaresFour }];
+type NavLeaf = {
+  href: string;
+  label: string;
+  icon: typeof SquaresFour;
+};
 
-const groups = [
+type NavGroup = {
+  label: string;
+  icon: typeof SquaresFour;
+  children: NavLeaf[];
+};
+
+type NavItem = NavLeaf | NavGroup;
+
+const isGroup = (item: NavItem): item is NavGroup => "children" in item;
+
+const navItems: NavItem[] = [
+  { href: "/dashboard", label: "Dashboard", icon: SquaresFour },
   {
     label: "Hishab Nikash",
     icon: Calculator,
@@ -34,9 +50,10 @@ const groups = [
       },
     ],
   },
+  { href: "/files", label: "Files", icon: Folder },
 ];
 
-const adminLink = { href: "/admin/users", label: "Users", icon: Users };
+const adminLink: NavLeaf = { href: "/admin/users", label: "Users", icon: Users };
 
 export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
@@ -45,13 +62,15 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`);
 
+  const items = isAdmin ? [...navItems, adminLink] : navItems;
+
   return (
     <>
       {/* Mobile top bar */}
       <div className="sticky top-0 z-30 flex items-center justify-between border-b bg-background/95 px-4 py-3 backdrop-blur md:hidden">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <Wallet weight="duotone" className="size-5 text-primary" />
-          <span>Debt Tracker</span>
+          <UserCircle weight="duotone" className="size-5 text-primary" />
+          <span>Manage Me</span>
         </Link>
         <Button
           variant="outline"
@@ -85,8 +104,8 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
             className="flex items-center gap-2 font-semibold"
             onClick={() => setOpen(false)}
           >
-            <Wallet weight="duotone" className="size-5 text-primary" />
-            <span>Debt Tracker</span>
+            <UserCircle weight="duotone" className="size-5 text-primary" />
+            <span>Manage Me</span>
           </Link>
           <Button
             variant="ghost"
@@ -100,46 +119,22 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {topLinks.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive(href)
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              )}
-            >
-              <Icon weight="duotone" className="size-4" />
-              {label}
-            </Link>
-          ))}
-
-          {groups.map((group) => (
-            <NavGroup
-              key={group.label}
-              group={group}
-              isActive={isActive}
-              onNavigate={() => setOpen(false)}
-            />
-          ))}
-
-          {isAdmin && (
-            <Link
-              href={adminLink.href}
-              onClick={() => setOpen(false)}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive(adminLink.href)
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              )}
-            >
-              <adminLink.icon weight="duotone" className="size-4" />
-              {adminLink.label}
-            </Link>
+          {items.map((item) =>
+            isGroup(item) ? (
+              <NavGroup
+                key={item.label}
+                group={item}
+                isActive={isActive}
+                onNavigate={() => setOpen(false)}
+              />
+            ) : (
+              <NavLink
+                key={item.href}
+                item={item}
+                isActive={isActive}
+                onNavigate={() => setOpen(false)}
+              />
+            )
           )}
         </nav>
 
@@ -151,12 +146,39 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   );
 }
 
+function NavLink({
+  item,
+  isActive,
+  onNavigate,
+}: {
+  item: NavLeaf;
+  isActive: (href: string) => boolean;
+  onNavigate: () => void;
+}) {
+  const { href, label, icon: Icon } = item;
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+        isActive(href)
+          ? "bg-muted text-foreground"
+          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+      )}
+    >
+      <Icon weight="duotone" className="size-4" />
+      {label}
+    </Link>
+  );
+}
+
 function NavGroup({
   group,
   isActive,
   onNavigate,
 }: {
-  group: (typeof groups)[number];
+  group: NavGroup;
   isActive: (href: string) => boolean;
   onNavigate: () => void;
 }) {
@@ -190,21 +212,13 @@ function NavGroup({
 
       {expanded && (
         <div className="mt-1 ml-4 flex flex-col gap-1 border-l pl-3">
-          {children.map(({ href, label: childLabel, icon: ChildIcon }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive(href)
-                  ? "bg-muted text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              )}
-            >
-              <ChildIcon weight="duotone" className="size-4" />
-              {childLabel}
-            </Link>
+          {children.map((child) => (
+            <NavLink
+              key={child.href}
+              item={child}
+              isActive={isActive}
+              onNavigate={onNavigate}
+            />
           ))}
         </div>
       )}

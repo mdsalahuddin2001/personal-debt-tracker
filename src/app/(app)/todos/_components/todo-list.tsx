@@ -32,9 +32,9 @@ export function TodoList({
         return (
           <li
             key={t.id}
-            className="flex flex-wrap items-start justify-between gap-3 py-3"
+            className="flex flex-col gap-3 py-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between"
           >
-            <div className="min-w-0 flex-1 space-y-1.5">
+            <div className="w-full min-w-0 space-y-1.5 sm:flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className={cn(
@@ -100,7 +100,7 @@ export function TodoList({
             </div>
 
             {showActions && (
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 items-center justify-end gap-1">
                 <TodoStatusSelect id={t.id} status={t.status} />
                 <TodoForm
                   todo={t}

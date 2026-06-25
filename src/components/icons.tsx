@@ -69,4 +69,9 @@ export {
   ArrowCounterClockwiseIcon as ArrowCounterClockwise,
   TagIcon as Tag,
   MagnifyingGlassIcon as MagnifyingGlass,
+  // Links module
+  LinkSimpleIcon as LinkSimple,
+  GlobeSimpleIcon as GlobeSimple,
+  ArrowSquareOutIcon as ArrowSquareOut,
+  FolderSimpleIcon as FolderSimple,
 } from "@phosphor-icons/react/dist/ssr";

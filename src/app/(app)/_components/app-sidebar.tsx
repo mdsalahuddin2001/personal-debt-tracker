@@ -19,6 +19,7 @@ import {
   Note,
   NotePencil,
   Archive,
+  LinkSimple,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ const navItems: NavItem[] = [
       { href: "/notes/archive", label: "Archive", icon: Archive },
     ],
   },
+  { href: "/links", label: "Links", icon: LinkSimple },
   { href: "/files", label: "Files", icon: Folder },
 ];
 

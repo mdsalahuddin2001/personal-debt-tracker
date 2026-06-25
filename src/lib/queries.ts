@@ -6,8 +6,11 @@ import { Folder } from "@/models/folder";
 import { FileItem } from "@/models/file";
 import { Todo } from "@/models/todo";
 import { Note } from "@/models/note";
+import { Link } from "@/models/link";
+import { LinkFolder } from "@/models/link-folder";
 import { type TodoStatus, type TodoPriority } from "@/lib/todo-types";
 import { type NoteColor } from "@/lib/note-types";
+import { faviconUrl, displayHost } from "@/lib/link-types";
 import { type DateRange } from "@/lib/todo-range";
 import { TYPE_META } from "@/lib/constants";
 import { requireUserId } from "@/lib/auth-helpers";
@@ -595,4 +598,169 @@ export async function getFolderOptions(): Promise<FolderOption[]> {
     name: f.name,
     parentId: f.parent ? String(f.parent) : null,
   }));
+}
+
+// ----- Links module -----
+
+export type SerializedLink = {
+  id: string;
+  title: string;
+  url: string;
+  /** Bare host (no "www."), shown under the title. */
+  host: string;
+  /** Favicon URL for the host, or "" when the URL can't be parsed. */
+  faviconUrl: string;
+  description: string;
+  tags: string[];
+  /** Owning folder id, or null when uncategorized. */
+  folderId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** A category in the rail, with a count of the links it holds. */
+export type LinkFolderEntry = { id: string; name: string; count: number };
+
+/** Lightweight {id, name} list for the form's folder picker and move menu. */
+export type LinkFolderOption = { id: string; name: string };
+
+type LeanLink = {
+  _id: Types.ObjectId;
+  title: string;
+  url: string;
+  description?: string | null;
+  tags?: string[] | null;
+  folder: Types.ObjectId | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type LeanLinkFolder = {
+  _id: Types.ObjectId;
+  name: string;
+};
+
+function serializeLink(l: LeanLink): SerializedLink {
+  return {
+    id: String(l._id),
+    title: l.title,
+    url: l.url,
+    host: displayHost(l.url),
+    faviconUrl: faviconUrl(l.url),
+    description: l.description ?? "",
+    tags: l.tags ?? [],
+    folderId: l.folder ? String(l.folder) : null,
+    createdAt: new Date(l.createdAt).toISOString(),
+    updatedAt: new Date(l.updatedAt).toISOString(),
+  };
+}
+
+export type LinksView = {
+  /** All folders the user owns, alphabetical, each with its link count. */
+  folders: LinkFolderEntry[];
+  /** Plain {id, name} options for the form picker and the move menu. */
+  folderOptions: LinkFolderOption[];
+  /** Links matching the current folder + search + tag filters. */
+  links: SerializedLink[];
+  /** Every distinct tag across all links, for the tag picker. */
+  allTags: string[];
+  /** "all", "uncategorized", or a folder id — echoes the active selection. */
+  selection: "all" | "uncategorized" | string;
+  /** Resolved heading: null for "all", "Uncategorized", or the folder name. */
+  currentFolderName: string | null;
+  /** Total links and the uncategorized subset, for the rail counters. */
+  counts: { all: number; uncategorized: number };
+};
+
+/**
+ * Load the links board. `folder` selects the rail entry: absent/"all" shows
+ * everything, "uncategorized" shows links with no folder, otherwise a folder id.
+ * `allTags`, the folder list, and the counts always reflect the full board so
+ * the rail and tag picker never empty out as you filter.
+ */
+export async function getLinksView({
+  folder,
+  search,
+  tag,
+}: {
+  folder?: string;
+  search?: string;
+  tag?: string;
+} = {}): Promise<LinksView | null> {
+  const owner = await requireUserId();
+  await connectDB();
+
+  // Resolve the selection up front so a malformed/foreign folder id 404s.
+  let selection: LinksView["selection"] = "all";
+  let currentFolderName: string | null = null;
+  if (folder === "uncategorized") {
+    selection = "uncategorized";
+    currentFolderName = "Uncategorized";
+  } else if (folder && folder !== "all") {
+    if (!Types.ObjectId.isValid(folder)) return null;
+    const current = await LinkFolder.findOne({
+      _id: folder,
+      owner,
+    }).lean<LeanLinkFolder | null>();
+    if (!current) return null;
+    selection = String(current._id);
+    currentFolderName = current.name;
+  }
+
+  const [folderDocs, all] = await Promise.all([
+    LinkFolder.find({ owner }).sort({ name: 1 }).lean<LeanLinkFolder[]>(),
+    Link.find({ owner })
+      .sort({ updatedAt: -1 })
+      .lean<LeanLink[]>()
+      .then((docs) => docs.map(serializeLink)),
+  ]);
+
+  // Per-folder counts over the whole board.
+  const countByFolder = new Map<string, number>();
+  let uncategorized = 0;
+  for (const l of all) {
+    if (l.folderId) {
+      countByFolder.set(l.folderId, (countByFolder.get(l.folderId) ?? 0) + 1);
+    } else {
+      uncategorized++;
+    }
+  }
+
+  const folders: LinkFolderEntry[] = folderDocs.map((f) => ({
+    id: String(f._id),
+    name: f.name,
+    count: countByFolder.get(String(f._id)) ?? 0,
+  }));
+  const folderOptions: LinkFolderOption[] = folderDocs.map((f) => ({
+    id: String(f._id),
+    name: f.name,
+  }));
+
+  // Distinct tags across the full board, alphabetical — computed before filtering.
+  const tagSet = new Set<string>();
+  for (const l of all) for (const t of l.tags) tagSet.add(t);
+  const allTags = [...tagSet].sort((a, b) => a.localeCompare(b));
+
+  const q = search?.trim().toLowerCase();
+  const links = all.filter((l) => {
+    if (selection === "uncategorized" && l.folderId !== null) return false;
+    if (selection !== "all" && selection !== "uncategorized" && l.folderId !== selection)
+      return false;
+    if (tag && !l.tags.includes(tag)) return false;
+    if (q) {
+      const haystack = `${l.title} ${l.url} ${l.description} ${l.tags.join(" ")}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  return {
+    folders,
+    folderOptions,
+    links,
+    allTags,
+    selection,
+    currentFolderName,
+    counts: { all: all.length, uncategorized },
+  };
 }

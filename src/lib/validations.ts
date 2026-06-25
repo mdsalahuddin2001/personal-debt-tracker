@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRANSACTION_TYPES } from "@/lib/transaction-types";
 import { TODO_STATUSES, TODO_PRIORITIES } from "@/lib/todo-types";
 import { NOTE_COLORS } from "@/lib/note-types";
+import { isValidUrl } from "@/lib/link-types";
 
 const optionalText = (max: number) =>
   z
@@ -64,6 +65,34 @@ export const noteSchema = z.object({
 });
 
 export type NoteInput = z.infer<typeof noteSchema>;
+
+// ----- Links module -----
+
+export const linkSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  // Accepted with or without a protocol; the action prepends https:// before
+  // storing. Validated here so a bad URL surfaces inline in the form.
+  url: z
+    .string()
+    .trim()
+    .min(1, "URL is required")
+    .max(2000)
+    .refine(isValidUrl, "Enter a valid URL"),
+  description: optionalText(2000),
+  // Comma-separated in the form; the action splits, trims, lowercases, and
+  // dedupes into the stored string[]. Kept as a string for react-hook-form.
+  tags: optionalText(400),
+  // "" / "none" = uncategorized. An ObjectId string otherwise (checked server-side).
+  folderId: z.string().optional().or(z.literal("")),
+});
+
+export type LinkInput = z.infer<typeof linkSchema>;
+
+export const linkFolderSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+});
+
+export type LinkFolderInput = z.infer<typeof linkFolderSchema>;
 
 // ----- Files module -----
 

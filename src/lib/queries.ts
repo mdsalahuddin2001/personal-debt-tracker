@@ -5,7 +5,9 @@ import { Transaction, type TransactionType } from "@/models/transaction";
 import { Folder } from "@/models/folder";
 import { FileItem } from "@/models/file";
 import { Todo } from "@/models/todo";
+import { Note } from "@/models/note";
 import { type TodoStatus, type TodoPriority } from "@/lib/todo-types";
+import { type NoteColor } from "@/lib/note-types";
 import { type DateRange } from "@/lib/todo-range";
 import { TYPE_META } from "@/lib/constants";
 import { requireUserId } from "@/lib/auth-helpers";
@@ -394,6 +396,95 @@ export async function getTodoSummary(window: DateRange = null): Promise<TodoSumm
     overdueTasks,
     upcomingTasks,
   };
+}
+
+// ----- Notes module -----
+
+export type SerializedNote = {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  color: NoteColor;
+  pinned: boolean;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type LeanNote = {
+  _id: Types.ObjectId;
+  title: string;
+  description?: string | null;
+  tags?: string[] | null;
+  color: NoteColor;
+  pinned?: boolean | null;
+  archived?: boolean | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+function serializeNote(n: LeanNote): SerializedNote {
+  return {
+    id: String(n._id),
+    title: n.title,
+    description: n.description ?? "",
+    tags: n.tags ?? [],
+    color: n.color,
+    pinned: !!n.pinned,
+    archived: !!n.archived,
+    createdAt: new Date(n.createdAt).toISOString(),
+    updatedAt: new Date(n.updatedAt).toISOString(),
+  };
+}
+
+export type NotesView = {
+  notes: SerializedNote[];
+  /** Every distinct tag across the board (both filters), for the tag picker. */
+  allTags: string[];
+  /** Whether any matched note is pinned — drives the "Pinned" section header. */
+  hasPinned: boolean;
+};
+
+/**
+ * Load the notes board for one view (active or archived), applying an optional
+ * text search and tag filter. Pinned notes sort first, then most recently
+ * updated. `allTags` always reflects the unfiltered board so the tag picker
+ * never empties itself out as you filter.
+ */
+export async function getNotesView({
+  archived = false,
+  search,
+  tag,
+}: {
+  archived?: boolean;
+  search?: string;
+  tag?: string;
+} = {}): Promise<NotesView> {
+  const owner = await requireUserId();
+  await connectDB();
+
+  const raw = await Note.find({ owner, archived })
+    .sort({ pinned: -1, updatedAt: -1 })
+    .lean<LeanNote[]>();
+  const all = raw.map(serializeNote);
+
+  // Distinct tags across this view, alphabetical — computed before filtering.
+  const tagSet = new Set<string>();
+  for (const n of all) for (const t of n.tags) tagSet.add(t);
+  const allTags = [...tagSet].sort((a, b) => a.localeCompare(b));
+
+  const q = search?.trim().toLowerCase();
+  const notes = all.filter((n) => {
+    if (tag && !n.tags.includes(tag)) return false;
+    if (q) {
+      const haystack = `${n.title} ${n.description} ${n.tags.join(" ")}`.toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  return { notes, allTags, hasPinned: notes.some((n) => n.pinned) };
 }
 
 // ----- Files module -----

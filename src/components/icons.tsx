@@ -60,4 +60,13 @@ export {
   ClockIcon as Clock,
   CalendarBlankIcon as CalendarBlank,
   FlagIcon as Flag,
+  // Notes module
+  NoteIcon as Note,
+  NotePencilIcon as NotePencil,
+  PushPinIcon as PushPin,
+  PushPinSlashIcon as PushPinSlash,
+  ArchiveIcon as Archive,
+  ArrowCounterClockwiseIcon as ArrowCounterClockwise,
+  TagIcon as Tag,
+  MagnifyingGlassIcon as MagnifyingGlass,
 } from "@phosphor-icons/react/dist/ssr";

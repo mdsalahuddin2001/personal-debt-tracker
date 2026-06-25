@@ -16,6 +16,9 @@ import {
   X,
   ListChecks,
   ClipboardText,
+  Note,
+  NotePencil,
+  Archive,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,6 +28,9 @@ type NavLeaf = {
   href: string;
   label: string;
   icon: typeof SquaresFour;
+  /** Highlight only on an exact path match — for links whose href is a prefix
+   * of a sibling's (e.g. "/notes" vs "/notes/archive"). */
+  exact?: boolean;
 };
 
 type NavGroup = {
@@ -60,6 +66,14 @@ const navItems: NavItem[] = [
       { href: "/todos/tasks", label: "Tasks", icon: ClipboardText },
     ],
   },
+  {
+    label: "Notes",
+    icon: Note,
+    children: [
+      { href: "/notes", label: "All Notes", icon: NotePencil, exact: true },
+      { href: "/notes/archive", label: "Archive", icon: Archive },
+    ],
+  },
   { href: "/files", label: "Files", icon: Folder },
 ];
 
@@ -69,8 +83,8 @@ export function AppSidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
-  const isActive = (href: string) =>
-    pathname === href || pathname.startsWith(`${href}/`);
+  const isActive = (href: string, exact = false) =>
+    exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
   const items = isAdmin ? [...navItems, adminLink] : navItems;
 
@@ -162,17 +176,17 @@ function NavLink({
   onNavigate,
 }: {
   item: NavLeaf;
-  isActive: (href: string) => boolean;
+  isActive: (href: string, exact?: boolean) => boolean;
   onNavigate: () => void;
 }) {
-  const { href, label, icon: Icon } = item;
+  const { href, label, icon: Icon, exact } = item;
   return (
     <Link
       href={href}
       onClick={onNavigate}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-        isActive(href)
+        isActive(href, exact)
           ? "bg-muted text-foreground"
           : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
       )}

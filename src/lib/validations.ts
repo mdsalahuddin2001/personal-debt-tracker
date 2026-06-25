@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TRANSACTION_TYPES } from "@/lib/transaction-types";
 import { TODO_STATUSES, TODO_PRIORITIES } from "@/lib/todo-types";
+import { NOTE_COLORS } from "@/lib/note-types";
 
 const optionalText = (max: number) =>
   z
@@ -49,6 +50,20 @@ export const todoSchema = z.object({
 });
 
 export type TodoInput = z.infer<typeof todoSchema>;
+
+// ----- Notes module -----
+
+export const noteSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  description: optionalText(10000),
+  color: z.enum(NOTE_COLORS),
+  // Comma-separated in the form; the server action splits, trims, lowercases,
+  // and dedupes into the stored string[]. Kept as a string here so the input
+  // binds cleanly to react-hook-form.
+  tags: optionalText(400),
+});
+
+export type NoteInput = z.infer<typeof noteSchema>;
 
 // ----- Files module -----
 

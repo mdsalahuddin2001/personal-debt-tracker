@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TRANSACTION_TYPES } from "@/lib/transaction-types";
+import { TODO_STATUSES, TODO_PRIORITIES } from "@/lib/todo-types";
 
 const optionalText = (max: number) =>
   z
@@ -34,6 +35,20 @@ export const transactionSchema = z.object({
 });
 
 export type TransactionInput = z.infer<typeof transactionSchema>;
+
+// ----- Todos module -----
+
+export const todoSchema = z.object({
+  title: z.string().min(1, "Title is required").max(200),
+  description: optionalText(2000),
+  status: z.enum(TODO_STATUSES),
+  priority: z.enum(TODO_PRIORITIES),
+  // Empty string = no due date. Kept as a string for the form layer; the
+  // server action converts it to a Date (or null).
+  dueDate: z.string().optional().or(z.literal("")),
+});
+
+export type TodoInput = z.infer<typeof todoSchema>;
 
 // ----- Files module -----
 

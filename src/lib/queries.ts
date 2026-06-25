@@ -4,6 +4,9 @@ import { Contact } from "@/models/contact";
 import { Transaction, type TransactionType } from "@/models/transaction";
 import { Folder } from "@/models/folder";
 import { FileItem } from "@/models/file";
+import { Todo } from "@/models/todo";
+import { type TodoStatus, type TodoPriority } from "@/lib/todo-types";
+import { type DateRange } from "@/lib/todo-range";
 import { TYPE_META } from "@/lib/constants";
 import { requireUserId } from "@/lib/auth-helpers";
 
@@ -190,6 +193,206 @@ export async function getDashboardSummary(): Promise<DashboardSummary> {
     totalPayable: round2(totalPayable),
     totalContacts,
     recentTransactions: recent.map(serializeTxn),
+  };
+}
+
+// ----- Todos module -----
+
+/** done tasks that had a due date are either "on_time" or "late"; null when
+ * the timing isn't applicable (not done, or no due date). */
+export type CompletionTiming = "on_time" | "late" | null;
+
+export type SerializedTodo = {
+  id: string;
+  title: string;
+  description?: string;
+  status: TodoStatus;
+  priority: TodoPriority;
+  dueDate: string | null;
+  completedAt: string | null;
+  createdAt: string;
+  /** Not done and the due date is in the past. */
+  overdue: boolean;
+  /** For done tasks with a due date: whether they beat the deadline. */
+  timing: CompletionTiming;
+};
+
+type LeanTodo = {
+  _id: Types.ObjectId;
+  title: string;
+  description?: string | null;
+  status: TodoStatus;
+  priority: TodoPriority;
+  dueDate?: Date | null;
+  completedAt?: Date | null;
+  createdAt: Date;
+};
+
+// Due dates are stored at UTC midnight (from a <input type="date">), but a task
+// is "on time" / not "overdue" for the whole of its due day. Compare against the
+// end of that day rather than its start.
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function serializeTodo(t: LeanTodo, now: number): SerializedTodo {
+  const due = t.dueDate ? new Date(t.dueDate) : null;
+  const completed = t.completedAt ? new Date(t.completedAt) : null;
+  const isDone = t.status === "done";
+  const dueEnd = due ? due.getTime() + MS_PER_DAY - 1 : null;
+
+  let timing: CompletionTiming = null;
+  if (isDone && dueEnd !== null && completed) {
+    timing = completed.getTime() <= dueEnd ? "on_time" : "late";
+  }
+
+  return {
+    id: String(t._id),
+    title: t.title,
+    description: t.description ?? undefined,
+    status: t.status,
+    priority: t.priority,
+    dueDate: due ? due.toISOString() : null,
+    completedAt: completed ? completed.toISOString() : null,
+    createdAt: new Date(t.createdAt).toISOString(),
+    overdue: !isDone && dueEnd !== null && dueEnd < now,
+    timing,
+  };
+}
+
+export async function getAllTodos(): Promise<SerializedTodo[]> {
+  const owner = await requireUserId();
+  await connectDB();
+  // Open tasks first, then by soonest due date, then newest. Done tasks sink
+  // to the bottom (status order: done > in_progress > todo alphabetically, so
+  // sort by a computed key instead — simplest is to fetch and sort in JS).
+  const todos = await Todo.find({ owner }).lean<LeanTodo[]>();
+  const now = Date.now();
+
+  const statusRank: Record<TodoStatus, number> = {
+    in_progress: 0,
+    todo: 1,
+    done: 2,
+  };
+
+  return todos
+    .map((t) => serializeTodo(t, now))
+    .sort((a, b) => {
+      if (statusRank[a.status] !== statusRank[b.status])
+        return statusRank[a.status] - statusRank[b.status];
+      // Within the same status: tasks with a due date come first, soonest first.
+      if (a.dueDate && b.dueDate)
+        return a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0;
+      if (a.dueDate) return -1;
+      if (b.dueDate) return 1;
+      return a.createdAt < b.createdAt ? 1 : -1;
+    });
+}
+
+export type TodoSummary = {
+  total: number;
+  byStatus: Record<TodoStatus, number>;
+  /** done tasks that had a deadline and met it. */
+  completedOnTime: number;
+  /** done tasks that had a deadline and missed it. */
+  completedLate: number;
+  /** open tasks past their due date. */
+  overdue: number;
+  /** complet(ed/able) tasks relevant to the open list (see upcomingTasks). */
+  dueSoon: number;
+  /** done / total, 0–100, rounded. */
+  completionRate: number;
+  /** on-time / (done tasks that had a deadline), 0–100, rounded. */
+  onTimeRate: number;
+  overdueTasks: SerializedTodo[];
+  /** When no window: open tasks due within 7 days. When a window is applied:
+   * the window's open (not done, not overdue) tasks. */
+  upcomingTasks: SerializedTodo[];
+};
+
+// A task belongs to a period by its due date, or its creation date when it has
+// no due date — so undated tasks still surface in time-scoped views.
+function referenceMs(raw: LeanTodo): number {
+  return new Date(raw.dueDate ?? raw.createdAt).getTime();
+}
+
+export async function getTodoSummary(window: DateRange = null): Promise<TodoSummary> {
+  const owner = await requireUserId();
+  await connectDB();
+  const all = await Todo.find({ owner }).lean<LeanTodo[]>();
+  const now = Date.now();
+  const weekAhead = now + 7 * 24 * 60 * 60 * 1000;
+
+  const todos = window
+    ? all.filter((raw) => {
+        const ms = referenceMs(raw);
+        return ms >= window.start.getTime() && ms <= window.end.getTime();
+      })
+    : all;
+
+  const byStatus: Record<TodoStatus, number> = {
+    todo: 0,
+    in_progress: 0,
+    done: 0,
+  };
+  let completedOnTime = 0;
+  let completedLate = 0;
+  let completedWithDeadline = 0;
+  let overdue = 0;
+  let dueSoon = 0;
+  const overdueTasks: SerializedTodo[] = [];
+  const upcomingTasks: SerializedTodo[] = [];
+
+  for (const raw of todos) {
+    const t = serializeTodo(raw, now);
+    byStatus[t.status]++;
+
+    if (t.timing === "on_time") {
+      completedOnTime++;
+      completedWithDeadline++;
+    } else if (t.timing === "late") {
+      completedLate++;
+      completedWithDeadline++;
+    }
+
+    if (t.overdue) {
+      overdue++;
+      overdueTasks.push(t);
+    } else if (t.status !== "done") {
+      // With a window: every remaining open task in the period. Without one:
+      // only tasks coming due within the next 7 days.
+      if (window) {
+        dueSoon++;
+        upcomingTasks.push(t);
+      } else if (t.dueDate && new Date(t.dueDate).getTime() <= weekAhead) {
+        dueSoon++;
+        upcomingTasks.push(t);
+      }
+    }
+  }
+
+  const total = todos.length;
+  // Sort by due date ascending; undated tasks sink to the end.
+  const byDueAsc = (a: SerializedTodo, b: SerializedTodo) => {
+    if (a.dueDate && b.dueDate) return a.dueDate < b.dueDate ? -1 : 1;
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return 0;
+  };
+  overdueTasks.sort(byDueAsc);
+  upcomingTasks.sort(byDueAsc);
+
+  return {
+    total,
+    byStatus,
+    completedOnTime,
+    completedLate,
+    overdue,
+    dueSoon,
+    completionRate: total ? Math.round((byStatus.done / total) * 100) : 0,
+    onTimeRate: completedWithDeadline
+      ? Math.round((completedOnTime / completedWithDeadline) * 100)
+      : 0,
+    overdueTasks,
+    upcomingTasks,
   };
 }
 

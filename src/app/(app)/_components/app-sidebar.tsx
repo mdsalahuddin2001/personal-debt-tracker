@@ -14,6 +14,8 @@ import {
   Folder,
   List,
   X,
+  ListChecks,
+  ClipboardText,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -48,6 +50,14 @@ const navItems: NavItem[] = [
         label: "Transactions",
         icon: ArrowsLeftRight,
       },
+    ],
+  },
+  {
+    label: "Todos",
+    icon: ListChecks,
+    children: [
+      { href: "/todos/summary", label: "Summary", icon: ChartBar },
+      { href: "/todos/tasks", label: "Tasks", icon: ClipboardText },
     ],
   },
   { href: "/files", label: "Files", icon: Folder },

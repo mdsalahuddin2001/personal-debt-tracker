@@ -52,4 +52,12 @@ export {
   DownloadSimpleIcon as DownloadSimple,
   ArrowsOutCardinalIcon as ArrowsOutCardinal,
   EyeIcon as Eye,
+  // Todos module
+  ListChecksIcon as ListChecks,
+  ClipboardTextIcon as ClipboardText,
+  CircleIcon as Circle,
+  CircleHalfIcon as CircleHalf,
+  ClockIcon as Clock,
+  CalendarBlankIcon as CalendarBlank,
+  FlagIcon as Flag,
 } from "@phosphor-icons/react/dist/ssr";

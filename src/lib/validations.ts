@@ -63,6 +63,9 @@ export type TodoInput = z.infer<typeof todoSchema>;
 export const noteSchema = z.object({
   title: z.string().min(1, "Title is required").max(200),
   description: optionalText(10000),
+  // Rich-text body as HTML from the editor. Images are stored as file URLs,
+  // not inline data, so this stays small in practice.
+  content: optionalText(200000),
   color: z.enum(NOTE_COLORS),
   // Comma-separated in the form; the server action splits, trims, lowercases,
   // and dedupes into the stored string[]. Kept as a string here so the input

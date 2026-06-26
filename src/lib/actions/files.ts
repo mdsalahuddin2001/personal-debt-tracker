@@ -26,6 +26,19 @@ function firstError(message?: string): string {
   return message ?? "Invalid input";
 }
 
+/** All image files the user owns, newest first — for the note image picker. */
+export async function listImageFiles(): Promise<
+  DataResult<{ id: string; name: string }[]>
+> {
+  const owner = await requireUserId();
+  await connectDB();
+  const files = await FileItem.find({ owner, contentType: { $regex: "^image/" } })
+    .sort({ createdAt: -1 })
+    .select("name")
+    .lean<{ _id: Types.ObjectId; name: string }[]>();
+  return okData(files.map((f) => ({ id: String(f._id), name: f.name })));
+}
+
 /** Resolve a destination folder id from the client, validating ownership. */
 async function resolveFolderId(
   owner: string,

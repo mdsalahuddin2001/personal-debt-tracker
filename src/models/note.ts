@@ -16,6 +16,8 @@ const noteSchema = new Schema(
     owner: { type: String, required: true, index: true },
     title: { type: String, required: true, trim: true },
     description: { type: String, trim: true, default: "" },
+    // Rich body as Markdown; rendered on the card.
+    content: { type: String, default: "" },
     // Free-form labels, normalized (trimmed, lowercased, deduped) before save.
     tags: { type: [String], default: [] },
     color: {

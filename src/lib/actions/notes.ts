@@ -45,6 +45,7 @@ export async function createNote(values: unknown): Promise<ActionResult> {
     owner,
     title: parsed.data.title,
     description: parsed.data.description || "",
+    content: parsed.data.content || "",
     color: parsed.data.color,
     tags: parseTags(parsed.data.tags),
   });
@@ -70,6 +71,7 @@ export async function updateNote(
       $set: {
         title: parsed.data.title,
         description: parsed.data.description || "",
+        content: parsed.data.content || "",
         color: parsed.data.color,
         tags: parseTags(parsed.data.tags),
       },

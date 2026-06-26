@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +40,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
+// Heavy, browser-only editor — load it client-side, outside SSR.
+const RichEditor = dynamic(
+  () => import("./rich-editor").then((m) => m.RichEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-40 items-center justify-center rounded-md border border-input text-sm text-muted-foreground">
+        Loading editor…
+      </div>
+    ),
+  }
+);
+
 export function NoteForm({
   note,
   trigger,
@@ -64,6 +78,7 @@ export function NoteForm({
   const defaults = (): NoteInput => ({
     title: note?.title ?? "",
     description: note?.description ?? "",
+    content: note?.content ?? "",
     color: note?.color ?? "default",
     tags: note?.tags.join(", ") ?? "",
   });
@@ -133,6 +148,21 @@ export function NoteForm({
                       value={field.value ?? ""}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Content (optional)</FormLabel>
+                  <RichEditor
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

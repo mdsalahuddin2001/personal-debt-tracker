@@ -47,3 +47,8 @@ export const COLOR_META: Record<NoteColor, ColorMeta> = {
 export const COLOR_OPTIONS = (Object.keys(COLOR_META) as NoteColor[]).map(
   (value) => ({ value, label: COLOR_META[value].label })
 );
+
+// Shared styling for rendered note HTML (the rich-text editor and the card show
+// the same content, so they use the same prose rules).
+export const NOTE_PROSE =
+  "text-sm [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_h1]:text-base [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-medium [&_li]:my-0.5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:my-1 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-muted [&_pre]:p-2 [&_ul]:list-disc [&_ul]:pl-5";

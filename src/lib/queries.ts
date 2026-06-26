@@ -417,6 +417,7 @@ export type SerializedNote = {
   id: string;
   title: string;
   description: string;
+  content: string;
   tags: string[];
   color: NoteColor;
   pinned: boolean;
@@ -429,6 +430,7 @@ type LeanNote = {
   _id: Types.ObjectId;
   title: string;
   description?: string | null;
+  content?: string | null;
   tags?: string[] | null;
   color: NoteColor;
   pinned?: boolean | null;
@@ -442,6 +444,7 @@ function serializeNote(n: LeanNote): SerializedNote {
     id: String(n._id),
     title: n.title,
     description: n.description ?? "",
+    content: n.content ?? "",
     tags: n.tags ?? [],
     color: n.color,
     pinned: !!n.pinned,
@@ -491,7 +494,7 @@ export async function getNotesView({
   const notes = all.filter((n) => {
     if (tag && !n.tags.includes(tag)) return false;
     if (q) {
-      const haystack = `${n.title} ${n.description} ${n.tags.join(" ")}`.toLowerCase();
+      const haystack = `${n.title} ${n.description} ${n.content} ${n.tags.join(" ")}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
     return true;

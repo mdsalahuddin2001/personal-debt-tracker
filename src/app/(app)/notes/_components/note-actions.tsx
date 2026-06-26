@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  DotsThreeVertical,
+  Eye,
   PencilSimple,
   PushPin,
   PushPinSlash,
@@ -20,13 +20,6 @@ import {
 import type { SerializedNote } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -35,16 +28,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { NoteForm } from "./note-form";
+import { NoteView } from "./note-view";
 
 export function NoteActions({ note }: { note: SerializedNote }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  // The edit form and the delete confirm each render their own dialog; the
-  // dropdown only toggles which (if any) is open.
+  const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  function run(action: () => Promise<{ success: boolean; error?: string }>, ok: string) {
+  function run(
+    action: () => Promise<{ success: boolean; error?: string }>,
+    ok: string
+  ) {
     startTransition(async () => {
       const res = await action();
       if (res.success) {
@@ -58,63 +54,74 @@ export function NoteActions({ note }: { note: SerializedNote }) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground"
-            aria-label="Note actions"
-            disabled={pending}
-          >
-            <DotsThreeVertical className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-44">
-          <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-            <PencilSimple className="size-4" /> Edit
-          </DropdownMenuItem>
-          {!note.archived &&
-            (note.pinned ? (
-              <DropdownMenuItem
-                onSelect={() => run(() => setNotePinned(note.id, false), "Unpinned")}
-              >
-                <PushPinSlash className="size-4" /> Unpin
-              </DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                onSelect={() => run(() => setNotePinned(note.id, true), "Pinned")}
-              >
-                <PushPin className="size-4" /> Pin
-              </DropdownMenuItem>
-            ))}
-          {note.archived ? (
-            <DropdownMenuItem
-              onSelect={() => run(() => setNoteArchived(note.id, false), "Restored")}
+      <div className="flex shrink-0 items-center gap-0.5">
+        <IconButton
+          label="View"
+          disabled={pending}
+          onClick={() => setViewOpen(true)}
+        >
+          <Eye className="size-4" />
+        </IconButton>
+
+        {!note.archived &&
+          (note.pinned ? (
+            <IconButton
+              label="Unpin"
+              disabled={pending}
+              onClick={() => run(() => setNotePinned(note.id, false), "Unpinned")}
             >
-              <ArrowCounterClockwise className="size-4" /> Restore
-            </DropdownMenuItem>
+              <PushPinSlash className="size-4" />
+            </IconButton>
           ) : (
-            <DropdownMenuItem
-              onSelect={() => run(() => setNoteArchived(note.id, true), "Archived")}
+            <IconButton
+              label="Pin"
+              disabled={pending}
+              onClick={() => run(() => setNotePinned(note.id, true), "Pinned")}
             >
-              <Archive className="size-4" /> Archive
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onSelect={() => setDeleteOpen(true)}
+              <PushPin className="size-4" />
+            </IconButton>
+          ))}
+
+        <IconButton
+          label="Edit"
+          disabled={pending}
+          onClick={() => setEditOpen(true)}
+        >
+          <PencilSimple className="size-4" />
+        </IconButton>
+
+        {note.archived ? (
+          <IconButton
+            label="Restore"
+            disabled={pending}
+            onClick={() => run(() => setNoteArchived(note.id, false), "Restored")}
           >
-            <Trash className="size-4" /> Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <ArrowCounterClockwise className="size-4" />
+          </IconButton>
+        ) : (
+          <IconButton
+            label="Archive"
+            disabled={pending}
+            onClick={() => run(() => setNoteArchived(note.id, true), "Archived")}
+          >
+            <Archive className="size-4" />
+          </IconButton>
+        )}
+
+        <IconButton
+          label="Delete"
+          disabled={pending}
+          destructive
+          onClick={() => setDeleteOpen(true)}
+        >
+          <Trash className="size-4" />
+        </IconButton>
+      </div>
+
+      <NoteView note={note} open={viewOpen} onOpenChange={setViewOpen} />
 
       {/* Mounted only while open so it re-reads the note's values each time. */}
-      {editOpen && (
-        <NoteForm note={note} open onOpenChange={setEditOpen} />
-      )}
+      {editOpen && <NoteForm note={note} open onOpenChange={setEditOpen} />}
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent>
@@ -150,5 +157,37 @@ export function NoteActions({ note }: { note: SerializedNote }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function IconButton({
+  label,
+  onClick,
+  disabled,
+  destructive,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  destructive?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className={
+        destructive
+          ? "size-7 text-muted-foreground hover:text-destructive"
+          : "size-7 text-muted-foreground"
+      }
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </Button>
   );
 }

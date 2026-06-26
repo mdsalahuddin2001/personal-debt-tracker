@@ -3,6 +3,12 @@ import { TRANSACTION_TYPES } from "@/lib/transaction-types";
 import { TODO_STATUSES, TODO_PRIORITIES } from "@/lib/todo-types";
 import { NOTE_COLORS } from "@/lib/note-types";
 import { isValidUrl } from "@/lib/link-types";
+import {
+  ROUTINE_COLORS,
+  ROUTINE_TIME_REGEX,
+  MAX_ROUTINE_TITLE,
+  MAX_ROUTINE_DESCRIPTION,
+} from "@/lib/routine-types";
 
 const optionalText = (max: number) =>
   z
@@ -93,6 +99,41 @@ export const linkFolderSchema = z.object({
 });
 
 export type LinkFolderInput = z.infer<typeof linkFolderSchema>;
+
+// ----- Routines module -----
+
+export const routineSchema = z.object({
+  title: z.string().min(1, "Title is required").max(MAX_ROUTINE_TITLE),
+  description: optionalText(MAX_ROUTINE_DESCRIPTION),
+  // "HH:MM" 24-hour, straight from <input type="time">.
+  timeOfDay: z
+    .string()
+    .regex(ROUTINE_TIME_REGEX, "Choose a time of day"),
+  // Weekdays (0 = Sunday … 6 = Saturday); at least one must be picked.
+  days: z
+    .array(z.number().int().min(0).max(6))
+    .min(1, "Pick at least one day")
+    .max(7),
+  // Optional "HH:MM" end time from <input type="time">. The action turns the
+  // start→end span into the stored durationMinutes (wrapping past midnight).
+  // "" = no end time / not tracked.
+  endTime: z
+    .string()
+    .regex(ROUTINE_TIME_REGEX, "Choose a valid time")
+    .optional()
+    .or(z.literal("")),
+  // "" / "none" = uncategorized. An ObjectId string otherwise (checked server-side).
+  categoryId: z.string().optional().or(z.literal("")),
+});
+
+export type RoutineInput = z.infer<typeof routineSchema>;
+
+export const routineCategorySchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(60),
+  color: z.enum(ROUTINE_COLORS),
+});
+
+export type RoutineCategoryInput = z.infer<typeof routineCategorySchema>;
 
 // ----- Files module -----
 

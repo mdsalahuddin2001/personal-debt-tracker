@@ -20,6 +20,8 @@ import {
   NotePencil,
   Archive,
   LinkSimple,
+  Repeat,
+  CalendarCheck,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -73,6 +75,14 @@ const navItems: NavItem[] = [
     children: [
       { href: "/notes", label: "All Notes", icon: NotePencil, exact: true },
       { href: "/notes/archive", label: "Archive", icon: Archive },
+    ],
+  },
+  {
+    label: "Routines",
+    icon: Repeat,
+    children: [
+      { href: "/routines", label: "Today", icon: CalendarCheck, exact: true },
+      { href: "/routines/all", label: "All routines", icon: ListChecks },
     ],
   },
   { href: "/links", label: "Links", icon: LinkSimple },

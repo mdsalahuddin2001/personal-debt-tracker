@@ -74,4 +74,9 @@ export {
   GlobeSimpleIcon as GlobeSimple,
   ArrowSquareOutIcon as ArrowSquareOut,
   FolderSimpleIcon as FolderSimple,
+  // Routines module
+  RepeatIcon as Repeat,
+  FireIcon as Fire,
+  TimerIcon as Timer,
+  CalendarCheckIcon as CalendarCheck,
 } from "@phosphor-icons/react/dist/ssr";

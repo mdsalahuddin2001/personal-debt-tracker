@@ -8,9 +8,19 @@ import { Todo } from "@/models/todo";
 import { Note } from "@/models/note";
 import { Link } from "@/models/link";
 import { LinkFolder } from "@/models/link-folder";
+import { Routine } from "@/models/routine";
+import { RoutineCategory } from "@/models/routine-category";
+import { RoutineLog } from "@/models/routine-log";
 import { type TodoStatus, type TodoPriority } from "@/lib/todo-types";
 import { type NoteColor } from "@/lib/note-types";
 import { faviconUrl, displayHost } from "@/lib/link-types";
+import {
+  type RoutineColor,
+  todayKey,
+  weekdayOfKey,
+  shiftKey,
+  computeStreak,
+} from "@/lib/routine-types";
 import { type DateRange } from "@/lib/todo-range";
 import { TYPE_META } from "@/lib/constants";
 import { requireUserId } from "@/lib/auth-helpers";
@@ -761,6 +771,278 @@ export async function getLinksView({
     allTags,
     selection,
     currentFolderName,
+    counts: { all: all.length, uncategorized },
+  };
+}
+
+// ----- Routines module -----
+
+export type SerializedRoutine = {
+  id: string;
+  title: string;
+  description: string;
+  /** "HH:MM" 24-hour; format with formatTimeOfDay for display. */
+  timeOfDay: string;
+  /** Weekdays the routine runs on (0 = Sunday … 6 = Saturday). */
+  days: number[];
+  /** Planned length in minutes, or null when not tracked. */
+  durationMinutes: number | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  categoryColor: RoutineColor | null;
+  /** Consecutive completed occurrences ending today. */
+  streak: number;
+  /** Whether today's occurrence is checked off. */
+  doneToday: boolean;
+  createdAt: string;
+};
+
+type LeanRoutine = {
+  _id: Types.ObjectId;
+  title: string;
+  description?: string | null;
+  timeOfDay: string;
+  days?: number[] | null;
+  durationMinutes?: number | null;
+  category: Types.ObjectId | null;
+  createdAt: Date;
+};
+
+type LeanRoutineCategory = {
+  _id: Types.ObjectId;
+  name: string;
+  color: RoutineColor;
+};
+
+// How far back to read completions when computing streaks. Comfortably longer
+// than any streak we'd display, and bounded so the scan stays cheap.
+const STREAK_WINDOW_DAYS = 370;
+
+/** Build a routineId → Set<dateKey> map of completions since `cutoff`. */
+async function getCompletionMap(
+  owner: string,
+  cutoff: string
+): Promise<Map<string, Set<string>>> {
+  const logs = await RoutineLog.find({ owner, date: { $gte: cutoff } })
+    .select("routine date")
+    .lean<{ routine: Types.ObjectId; date: string }[]>();
+
+  const map = new Map<string, Set<string>>();
+  for (const log of logs) {
+    const key = String(log.routine);
+    let set = map.get(key);
+    if (!set) {
+      set = new Set<string>();
+      map.set(key, set);
+    }
+    set.add(log.date);
+  }
+  return map;
+}
+
+function serializeRoutine(
+  r: LeanRoutine,
+  categories: Map<string, LeanRoutineCategory>,
+  completions: Map<string, Set<string>>,
+  today: string
+): SerializedRoutine {
+  const days = r.days ?? [];
+  const completed = completions.get(String(r._id)) ?? new Set<string>();
+  const category = r.category ? categories.get(String(r.category)) : undefined;
+
+  return {
+    id: String(r._id),
+    title: r.title,
+    description: r.description ?? "",
+    timeOfDay: r.timeOfDay,
+    days,
+    durationMinutes: r.durationMinutes ?? null,
+    categoryId: category ? String(category._id) : null,
+    categoryName: category?.name ?? null,
+    categoryColor: category?.color ?? null,
+    streak: computeStreak(days, completed, today),
+    doneToday: completed.has(today),
+    createdAt: new Date(r.createdAt).toISOString(),
+  };
+}
+
+// Earliest first by clock time, then alphabetical for a stable order.
+function byTimeOfDay(a: SerializedRoutine, b: SerializedRoutine): number {
+  if (a.timeOfDay !== b.timeOfDay)
+    return a.timeOfDay < b.timeOfDay ? -1 : 1;
+  return a.title.localeCompare(b.title);
+}
+
+export type RoutinesToday = {
+  /** Today's date key ("YYYY-MM-DD") in the app timezone. */
+  dateKey: string;
+  /** JS weekday for today (0 = Sunday). */
+  weekday: number;
+  /** Today's scheduled routines, earliest first. */
+  routines: SerializedRoutine[];
+  /** Completed-today count and the scheduled total, for the progress ring. */
+  done: number;
+  total: number;
+};
+
+/** Today's scheduled routines with their completion state and streaks. */
+export async function getRoutinesToday(): Promise<RoutinesToday> {
+  const owner = await requireUserId();
+  await connectDB();
+
+  const today = todayKey();
+  const weekday = weekdayOfKey(today);
+  const cutoff = shiftKey(today, -STREAK_WINDOW_DAYS);
+
+  const [rawCategories, rawRoutines, completions] = await Promise.all([
+    RoutineCategory.find({ owner }).lean<LeanRoutineCategory[]>(),
+    // Only routines scheduled for today's weekday.
+    Routine.find({ owner, days: weekday }).lean<LeanRoutine[]>(),
+    getCompletionMap(owner, cutoff),
+  ]);
+
+  const categories = new Map(rawCategories.map((c) => [String(c._id), c]));
+  const routines = rawRoutines
+    .map((r) => serializeRoutine(r, categories, completions, today))
+    .sort(byTimeOfDay);
+
+  return {
+    dateKey: today,
+    weekday,
+    routines,
+    done: routines.filter((r) => r.doneToday).length,
+    total: routines.length,
+  };
+}
+
+/** Lightweight category list for the routine form's picker. */
+export async function getRoutineCategoryOptions(): Promise<
+  RoutineCategoryOption[]
+> {
+  const owner = await requireUserId();
+  await connectDB();
+  const categories = await RoutineCategory.find({ owner })
+    .sort({ name: 1 })
+    .lean<LeanRoutineCategory[]>();
+  return categories.map((c) => ({
+    id: String(c._id),
+    name: c.name,
+    color: c.color,
+  }));
+}
+
+export type RoutineCategoryEntry = {
+  id: string;
+  name: string;
+  color: RoutineColor;
+  count: number;
+};
+
+export type RoutineCategoryOption = {
+  id: string;
+  name: string;
+  color: RoutineColor;
+};
+
+export type RoutinesBoard = {
+  /** All categories the user owns, alphabetical, each with its routine count. */
+  categories: RoutineCategoryEntry[];
+  /** Options for the form's category picker. */
+  categoryOptions: RoutineCategoryOption[];
+  /** Routines matching the current category filter, earliest first. */
+  routines: SerializedRoutine[];
+  /** "all", "uncategorized", or a category id — echoes the active selection. */
+  selection: "all" | "uncategorized" | string;
+  /** Resolved heading: null for "all", "Uncategorized", or the category name. */
+  currentCategoryName: string | null;
+  /** Total routines and the uncategorized subset, for the rail counters. */
+  counts: { all: number; uncategorized: number };
+};
+
+/**
+ * Load the full routine board for the manage view. `category` selects the rail
+ * entry: absent/"all" shows everything, "uncategorized" shows routines with no
+ * category, otherwise a category id. The category list and counts always
+ * reflect the full board so the rail never empties out as you filter. Returns
+ * null when the category id is malformed or not owned by the user.
+ */
+export async function getRoutinesBoard({
+  category,
+}: { category?: string } = {}): Promise<RoutinesBoard | null> {
+  const owner = await requireUserId();
+  await connectDB();
+
+  const today = todayKey();
+  const cutoff = shiftKey(today, -STREAK_WINDOW_DAYS);
+
+  // Resolve the selection up front so a malformed/foreign id 404s.
+  let selection: RoutinesBoard["selection"] = "all";
+  let currentCategoryName: string | null = null;
+  if (category === "uncategorized") {
+    selection = "uncategorized";
+    currentCategoryName = "Uncategorized";
+  } else if (category && category !== "all") {
+    if (!Types.ObjectId.isValid(category)) return null;
+    const current = await RoutineCategory.findOne({
+      _id: category,
+      owner,
+    }).lean<LeanRoutineCategory | null>();
+    if (!current) return null;
+    selection = String(current._id);
+    currentCategoryName = current.name;
+  }
+
+  const [rawCategories, rawRoutines, completions] = await Promise.all([
+    RoutineCategory.find({ owner })
+      .sort({ name: 1 })
+      .lean<LeanRoutineCategory[]>(),
+    Routine.find({ owner }).lean<LeanRoutine[]>(),
+    getCompletionMap(owner, cutoff),
+  ]);
+
+  const categoryMap = new Map(rawCategories.map((c) => [String(c._id), c]));
+  const all = rawRoutines
+    .map((r) => serializeRoutine(r, categoryMap, completions, today))
+    .sort(byTimeOfDay);
+
+  // Per-category counts over the whole board.
+  const countByCategory = new Map<string, number>();
+  let uncategorized = 0;
+  for (const r of all) {
+    if (r.categoryId) {
+      countByCategory.set(
+        r.categoryId,
+        (countByCategory.get(r.categoryId) ?? 0) + 1
+      );
+    } else {
+      uncategorized++;
+    }
+  }
+
+  const categories: RoutineCategoryEntry[] = rawCategories.map((c) => ({
+    id: String(c._id),
+    name: c.name,
+    color: c.color,
+    count: countByCategory.get(String(c._id)) ?? 0,
+  }));
+  const categoryOptions: RoutineCategoryOption[] = rawCategories.map((c) => ({
+    id: String(c._id),
+    name: c.name,
+    color: c.color,
+  }));
+
+  const routines = all.filter((r) => {
+    if (selection === "uncategorized") return r.categoryId === null;
+    if (selection !== "all") return r.categoryId === selection;
+    return true;
+  });
+
+  return {
+    categories,
+    categoryOptions,
+    routines,
+    selection,
+    currentCategoryName,
     counts: { all: all.length, uncategorized },
   };
 }

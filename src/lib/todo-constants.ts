@@ -28,6 +28,8 @@ export const STATUS_META: Record<TodoStatus, StatusMeta> = {
 type PriorityMeta = {
   label: string;
   badge: string;
+  /** Left-border accent that tints a task card by its priority. */
+  bar: string;
   /** Sort weight, high first. */
   rank: number;
 };
@@ -36,16 +38,19 @@ export const PRIORITY_META: Record<TodoPriority, PriorityMeta> = {
   high: {
     label: "High",
     badge: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-400",
+    bar: "border-l-red-500",
     rank: 3,
   },
   medium: {
     label: "Medium",
     badge: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+    bar: "border-l-amber-500",
     rank: 2,
   },
   low: {
     label: "Low",
     badge: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    bar: "border-l-slate-300 dark:border-l-slate-600",
     rank: 1,
   },
 };

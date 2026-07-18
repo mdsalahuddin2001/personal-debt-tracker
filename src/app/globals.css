@@ -4,127 +4,249 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Theme — adapted from the Listenyzen design system.
+ * Brand vibe: teal/green primary, Inter type, soft surfaces & shadows,
+ * light/standard radius scale. Values live as CSS variables in :root / .dark
+ * below; this block exposes them to Tailwind as utilities.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Type */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
+
+  /* shadcn semantic surface/text/brand */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Chart / section accents */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Extra semantic colors (usable as bg-success / text-warning …) */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  /* Radius scale — light, standard roundness (not pill-shaped) */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-2xl: 12px;
+  --radius-3xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows (swap with theme via the --elevation-* vars) */
+  --shadow-sm: var(--elevation-sm);
+  --shadow-md: var(--elevation-md);
+  --shadow-lg: var(--elevation-lg);
 }
 
+/* ── Light mode (default) ─────────────────────────────────────────────── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.375rem;
+
+  --background: #f7f8fa;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-foreground: #1a1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a2e;
+
+  --primary: #247a69;
+  --primary-foreground: #ffffff;
+  --secondary: #eceef2;
+  --secondary-foreground: #1a1a2e;
+  --muted: #eceef2;
+  --muted-foreground: #6b7280;
+  --accent: #e8f5f2;
+  --accent-foreground: #1f6b5c;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #e2e6ea;
+  --input: #e2e6ea;
+  --ring: #3b82f6;
+
+  /* Section accent / chart palette */
+  --chart-1: #247a69;
+  --chart-2: #f59e0b;
+  --chart-3: #6366f1;
+  --chart-4: #8b5cf6;
+  --chart-5: #f43f5e;
+
+  /* Extra semantic */
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #f59e0b;
+  --warning-foreground: #1a1a2e;
+  --info: #6366f1;
+  --info-foreground: #ffffff;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a2e;
+  --sidebar-primary: #247a69;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f5f2;
+  --sidebar-accent-foreground: #1f6b5c;
+  --sidebar-border: #e2e6ea;
+  --sidebar-ring: #3b82f6;
+
+  /* Elevation */
+  --elevation-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --elevation-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --elevation-lg: 0 8px 32px rgba(0, 0, 0, 0.14);
 }
 
+/* ── Dark mode ────────────────────────────────────────────────────────── */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #13151a;
+  --foreground: #f0f2f5;
+  --card: #1e2025;
+  --card-foreground: #f0f2f5;
+  --popover: #1e2025;
+  --popover-foreground: #f0f2f5;
+
+  --primary: #3eada0;
+  --primary-foreground: #0a1f1b;
+  --secondary: #252830;
+  --secondary-foreground: #f0f2f5;
+  --muted: #252830;
+  --muted-foreground: #9ca3af;
+  --accent: #1a2e2c;
+  --accent-foreground: #3eada0;
+  --destructive: #f87171;
+  --destructive-foreground: #1a1a2e;
+
+  --border: #2e3138;
+  --input: #2e3138;
+  --ring: #60a5fa;
+
+  --chart-1: #3eada0;
+  --chart-2: #fbbf24;
+  --chart-3: #818cf8;
+  --chart-4: #a78bfa;
+  --chart-5: #fb7185;
+
+  --success: #4ade80;
+  --success-foreground: #0a1f10;
+  --warning: #fbbf24;
+  --warning-foreground: #1a1a2e;
+  --info: #818cf8;
+  --info-foreground: #0a0f2e;
+
+  --sidebar: #1e2025;
+  --sidebar-foreground: #f0f2f5;
+  --sidebar-primary: #3eada0;
+  --sidebar-primary-foreground: #0a1f1b;
+  --sidebar-accent: #1a2e2c;
+  --sidebar-accent-foreground: #3eada0;
+  --sidebar-border: #2e3138;
+  --sidebar-ring: #60a5fa;
+
+  --elevation-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --elevation-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --elevation-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
+/* ── Base styles ──────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
   html {
     @apply font-sans;
   }
+  /*
+   * Tailwind v4 no longer applies `cursor: pointer` to buttons (it defers to the
+   * browser default of `default`). Restore a pointer for all interactive elements
+   * so every clickable item shows the hand cursor; disabled controls keep the
+   * not-allowed cursor.
+   */
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='menuitem'],
+  [role='option'],
+  [role='tab'],
+  a[href],
+  label[for],
+  summary,
+  select:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled),
+  input[type='file']:not(:disabled)::file-selector-button {
+    cursor: pointer;
+  }
+  :disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}
+
+/*
+ * Keep browser autofill from forcing an opaque (white/yellow) background.
+ * Chrome only animates the autofill background, so an effectively-infinite
+ * transition delay prevents it from ever painting — the themed input
+ * background shows through. We just fix the text/caret color for contrast.
+ *
+ * NOTE: this lives OUTSIDE @layer so it beats the Input's `transition-colors`
+ * utility — a rule in Tailwind's `utilities` layer would otherwise override
+ * any `transition` declared inside @layer base, defeating the trick.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--foreground);
+  caret-color: var(--foreground);
+  transition:
+    background-color 600000s 0s,
+    color 600000s 0s;
+}
+
+/* ── Generic design-system utilities ──────────────────────────────────── */
+@utility label-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }

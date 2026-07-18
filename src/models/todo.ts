@@ -37,6 +37,8 @@ const todoSchema = new Schema(
     // Stamped when status becomes "done"; cleared if reopened. Compared against
     // dueDate to tell on-time completions from late ones.
     completedAt: { type: Date, default: null },
+    // Archived tasks are hidden from every view except the Archive.
+    archived: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -44,6 +46,7 @@ const todoSchema = new Schema(
 // Owner-scoped lookups: board/list views and due-date sorted queries.
 todoSchema.index({ owner: 1, status: 1 });
 todoSchema.index({ owner: 1, dueDate: 1 });
+todoSchema.index({ owner: 1, archived: 1 });
 
 export type TodoDoc = InferSchemaType<typeof todoSchema>;
 

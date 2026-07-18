@@ -133,7 +133,7 @@ export default async function TodoSummaryPage({
               <CardDescription>Needs attention now</CardDescription>
             </div>
             <Link
-              href="/todos/tasks?status=todo"
+              href="/todos/tasks"
               className="text-sm text-muted-foreground hover:underline"
             >
               View tasks

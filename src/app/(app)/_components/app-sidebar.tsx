@@ -66,7 +66,9 @@ const navItems: NavItem[] = [
     icon: ListChecks,
     children: [
       { href: "/todos/summary", label: "Summary", icon: ChartBar },
+      { href: "/todos/today", label: "Today", icon: CalendarCheck },
       { href: "/todos/tasks", label: "Tasks", icon: ClipboardText },
+      { href: "/todos/archive", label: "Archive", icon: Archive },
     ],
   },
   {
@@ -238,7 +240,6 @@ function NavGroup({
         <Icon weight="duotone" className="size-4" />
         <span className="flex-1 text-left">{label}</span>
         <CaretDown
-          weight="duotone"
           className={cn(
             "size-3.5 transition-transform",
             expanded ? "rotate-180" : "rotate-0"
@@ -246,18 +247,25 @@ function NavGroup({
         />
       </button>
 
-      {expanded && (
-        <div className="mt-1 ml-4 flex flex-col gap-1 border-l pl-3">
-          {children.map((child) => (
-            <NavLink
-              key={child.href}
-              item={child}
-              isActive={isActive}
-              onNavigate={onNavigate}
-            />
-          ))}
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out",
+          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="mt-1 ml-4 flex flex-col gap-1 border-l pl-3">
+            {children.map((child) => (
+              <NavLink
+                key={child.href}
+                item={child}
+                isActive={isActive}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

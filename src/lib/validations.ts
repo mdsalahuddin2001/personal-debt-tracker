@@ -52,8 +52,13 @@ export const todoSchema = z.object({
   status: z.enum(TODO_STATUSES),
   priority: z.enum(TODO_PRIORITIES),
   // Empty string = no due date. Kept as a string for the form layer; the
-  // server action converts it to a Date (or null).
-  dueDate: z.string().optional().or(z.literal("")),
+  // server action converts it to a Date (or null). A non-empty value must be
+  // the YYYY-MM-DD that <input type="date"> produces.
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date")
+    .optional()
+    .or(z.literal("")),
 });
 
 export type TodoInput = z.infer<typeof todoSchema>;

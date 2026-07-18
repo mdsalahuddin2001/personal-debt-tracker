@@ -1,27 +1,23 @@
 import { Plus } from "@/components/icons";
-import { getAllTodos } from "@/lib/queries";
-import { TODO_STATUSES, TODO_PRIORITIES } from "@/lib/todo-types";
-import type { TodoStatus, TodoPriority } from "@/lib/todo-types";
-import { Card, CardContent } from "@/components/ui/card";
+import { getTodos } from "@/lib/queries";
+import { TODO_PRIORITIES, type TodoPriority } from "@/lib/todo-types";
 import { Button } from "@/components/ui/button";
 import { TodoForm } from "@/app/(app)/todos/_components/todo-form";
-import { TodoList } from "@/app/(app)/todos/_components/todo-list";
-import { TodoFilters } from "@/app/(app)/todos/_components/todo-filters";
+import { TodoCard } from "@/app/(app)/todos/_components/todo-card";
+import { PriorityFilter } from "@/app/(app)/todos/_components/priority-filter";
 
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; priority?: string }>;
+  searchParams: Promise<{ priority?: string }>;
 }) {
-  const { status, priority } = await searchParams;
-  let todos = await getAllTodos();
+  const { priority } = await searchParams;
+  const priorityFilter =
+    priority && TODO_PRIORITIES.includes(priority as TodoPriority)
+      ? (priority as TodoPriority)
+      : undefined;
 
-  if (status && TODO_STATUSES.includes(status as TodoStatus)) {
-    todos = todos.filter((t) => t.status === status);
-  }
-  if (priority && TODO_PRIORITIES.includes(priority as TodoPriority)) {
-    todos = todos.filter((t) => t.priority === priority);
-  }
+  const todos = await getTodos({ priority: priorityFilter });
 
   return (
     <div className="space-y-6">
@@ -39,17 +35,28 @@ export default async function TasksPage({
         />
       </div>
 
-      <TodoFilters />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <PriorityFilter />
+        <p className="text-sm text-muted-foreground">
+          {todos.length} {todos.length === 1 ? "task" : "tasks"}
+        </p>
+      </div>
 
-      <Card>
-        <CardContent className="py-2">
-          <TodoList
-            todos={todos}
-            showActions
-            emptyMessage="No tasks match these filters."
-          />
-        </CardContent>
-      </Card>
+      {todos.length === 0 ? (
+        <div className="rounded-lg border border-dashed py-16 text-center">
+          <p className="text-sm text-muted-foreground">
+            {priorityFilter
+              ? "No tasks match this priority."
+              : "No tasks here yet. Add your first one."}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-2.5">
+          {todos.map((t) => (
+            <TodoCard key={t.id} todo={t} showActions showStatusBadge />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

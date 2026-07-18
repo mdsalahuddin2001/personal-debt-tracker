@@ -39,12 +39,27 @@ import { Button } from "@/components/ui/button";
 
 export function TodoForm({
   todo,
+  /** Pre-filled due date (YYYY-MM-DD) for a new task, e.g. on the Today view. */
+  defaultDueDate,
   trigger,
+  open: openProp,
+  onOpenChange,
 }: {
   todo?: SerializedTodo;
-  trigger: React.ReactNode;
+  defaultDueDate?: string;
+  /** Uncontrolled "click to open" mode (e.g. an Add button). */
+  trigger?: React.ReactNode;
+  /** Controlled mode (e.g. opened from a row's actions menu). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : internalOpen;
+  const setOpen = (next: boolean) => {
+    if (!controlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
   const editing = !!todo;
 
   const defaults = (): TodoInput => ({
@@ -52,7 +67,7 @@ export function TodoForm({
     description: todo?.description ?? "",
     status: todo?.status ?? "todo",
     priority: todo?.priority ?? "medium",
-    dueDate: todo?.dueDate ? toDateInputValue(todo.dueDate) : "",
+    dueDate: todo?.dueDate ? toDateInputValue(todo.dueDate) : (defaultDueDate ?? ""),
   });
 
   const form = useForm<TodoInput>({
@@ -82,7 +97,7 @@ export function TodoForm({
         if (next) form.reset(defaults());
       }}
     >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{editing ? "Edit task" : "Add task"}</DialogTitle>

@@ -21,7 +21,8 @@ import {
   shiftKey,
   computeStreak,
 } from "@/lib/routine-types";
-import { type DateRange } from "@/lib/todo-range";
+import { type DateRange, resolveTodoRange } from "@/lib/todo-range";
+import { PRIORITY_META } from "@/lib/todo-constants";
 import { TYPE_META } from "@/lib/constants";
 import { requireUserId } from "@/lib/auth-helpers";
 
@@ -230,6 +231,8 @@ export type SerializedTodo = {
   overdue: boolean;
   /** For done tasks with a due date: whether they beat the deadline. */
   timing: CompletionTiming;
+  /** Archived tasks are hidden from every view except the Archive. */
+  archived: boolean;
 };
 
 type LeanTodo = {
@@ -241,6 +244,7 @@ type LeanTodo = {
   dueDate?: Date | null;
   completedAt?: Date | null;
   createdAt: Date;
+  archived?: boolean | null;
 };
 
 // Due dates are stored at UTC midnight (from a <input type="date">), but a task
@@ -270,36 +274,68 @@ function serializeTodo(t: LeanTodo, now: number): SerializedTodo {
     createdAt: new Date(t.createdAt).toISOString(),
     overdue: !isDone && dueEnd !== null && dueEnd < now,
     timing,
+    archived: t.archived ?? false,
   };
 }
 
-export async function getAllTodos(): Promise<SerializedTodo[]> {
+// Open tasks first, then higher priority, then soonest due date, then newest.
+const statusRank: Record<TodoStatus, number> = {
+  in_progress: 0,
+  todo: 1,
+  done: 2,
+};
+
+function byTodoOrder(a: SerializedTodo, b: SerializedTodo): number {
+  if (statusRank[a.status] !== statusRank[b.status])
+    return statusRank[a.status] - statusRank[b.status];
+  // Within the same status: higher priority first.
+  if (PRIORITY_META[a.priority].rank !== PRIORITY_META[b.priority].rank)
+    return PRIORITY_META[b.priority].rank - PRIORITY_META[a.priority].rank;
+  // Then tasks with a due date, soonest first.
+  if (a.dueDate && b.dueDate)
+    return a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0;
+  if (a.dueDate) return -1;
+  if (b.dueDate) return 1;
+  return a.createdAt < b.createdAt ? 1 : -1;
+}
+
+/** Non-archived tasks, optionally narrowed by priority, sorted open-first. */
+export async function getTodos(filters?: {
+  priority?: TodoPriority;
+}): Promise<SerializedTodo[]> {
   const owner = await requireUserId();
   await connectDB();
-  // Open tasks first, then by soonest due date, then newest. Done tasks sink
-  // to the bottom (status order: done > in_progress > todo alphabetically, so
-  // sort by a computed key instead — simplest is to fetch and sort in JS).
-  const todos = await Todo.find({ owner }).lean<LeanTodo[]>();
+  const query: Record<string, unknown> = { owner, archived: { $ne: true } };
+  if (filters?.priority) query.priority = filters.priority;
+  const todos = await Todo.find(query).lean<LeanTodo[]>();
   const now = Date.now();
+  return todos.map((t) => serializeTodo(t, now)).sort(byTodoOrder);
+}
 
-  const statusRank: Record<TodoStatus, number> = {
-    in_progress: 0,
-    todo: 1,
-    done: 2,
-  };
+/** Non-archived tasks whose due date falls on today (UTC day, matching how
+ * due dates are stored), sorted with open work first. */
+export async function getTodayTodos(): Promise<SerializedTodo[]> {
+  const owner = await requireUserId();
+  await connectDB();
+  const day = resolveTodoRange("today")!;
+  const todos = await Todo.find({
+    owner,
+    archived: { $ne: true },
+    dueDate: { $gte: day.start, $lte: day.end },
+  }).lean<LeanTodo[]>();
+  const now = Date.now();
+  return todos.map((t) => serializeTodo(t, now)).sort(byTodoOrder);
+}
 
-  return todos
-    .map((t) => serializeTodo(t, now))
-    .sort((a, b) => {
-      if (statusRank[a.status] !== statusRank[b.status])
-        return statusRank[a.status] - statusRank[b.status];
-      // Within the same status: tasks with a due date come first, soonest first.
-      if (a.dueDate && b.dueDate)
-        return a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0;
-      if (a.dueDate) return -1;
-      if (b.dueDate) return 1;
-      return a.createdAt < b.createdAt ? 1 : -1;
-    });
+/** Archived tasks, most recently created first. */
+export async function getArchivedTodos(): Promise<SerializedTodo[]> {
+  const owner = await requireUserId();
+  await connectDB();
+  const todos = await Todo.find({ owner, archived: true })
+    .sort({ createdAt: -1 })
+    .lean<LeanTodo[]>();
+  const now = Date.now();
+  return todos.map((t) => serializeTodo(t, now));
 }
 
 export type TodoSummary = {
@@ -332,7 +368,7 @@ function referenceMs(raw: LeanTodo): number {
 export async function getTodoSummary(window: DateRange = null): Promise<TodoSummary> {
   const owner = await requireUserId();
   await connectDB();
-  const all = await Todo.find({ owner }).lean<LeanTodo[]>();
+  const all = await Todo.find({ owner, archived: { $ne: true } }).lean<LeanTodo[]>();
   const now = Date.now();
   const weekAhead = now + 7 * 24 * 60 * 60 * 1000;
 

@@ -16,6 +16,8 @@ function firstError(message?: string): string {
 function revalidateTodos() {
   revalidatePath("/todos/summary");
   revalidatePath("/todos/tasks");
+  revalidatePath("/todos/today");
+  revalidatePath("/todos/archive");
 }
 
 // Parse the form's due-date string into a Date, or null when left blank.
@@ -123,6 +125,25 @@ export async function setTodoStatus(
     { _id: id, owner },
     { $set: { status, completedAt } }
   );
+
+  revalidateTodos();
+  return ok;
+}
+
+/** Move a task to the archive (hidden everywhere but the Archive) or restore it. */
+export async function setTodoArchived(
+  id: string,
+  archived: boolean
+): Promise<ActionResult> {
+  const owner = await requireUserId();
+  if (!Types.ObjectId.isValid(id)) return fail("Invalid task");
+
+  await connectDB();
+  const res = await Todo.findOneAndUpdate(
+    { _id: id, owner },
+    { $set: { archived } }
+  );
+  if (!res) return fail("Task not found");
 
   revalidateTodos();
   return ok;
